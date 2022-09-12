@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Microsoft.DotNet.ApiCompatibility.Abstractions;
 using Microsoft.DotNet.ApiCompatibility.Logging;
 using Microsoft.DotNet.ApiCompatibility.Runner;
@@ -26,10 +28,23 @@ namespace Microsoft.DotNet.PackageValidation
             Package? rightPackage = null)
         {
             // Don't enqueue duplicate items (if no right package is supplied and items match)
-            if (rightPackage == null && ContentItemCollectionEquals(leftContentItems, rightContentItems))
+            if (rightPackage == null && leftContentItems.SequenceEqual(rightContentItems, ContentItemEqualityComparer.Instance))
             {
                 return;
             }
+
+            // Don't perform api compatibility checks on placeholder files.
+            if (leftContentItems.IsPlaceholderFile() && rightContentItems.IsPlaceholderFile())
+            {
+                leftContentItems[0].Properties.TryGetValue("tfm", out object? tfmRaw);
+                string tfm = tfmRaw?.ToString() ?? string.Empty;
+
+                log.LogMessage(MessageImportance.Normal, Resources.SkipApiCompatForPlaceholderFiles, tfm);
+            }
+
+            // Make sure placeholder package files aren't enqueued as api comparison check work items.
+            Debug.Assert(!leftContentItems.IsPlaceholderFile() && !rightContentItems.IsPlaceholderFile(),
+                "Placeholder files must not be enqueued for api comparison checks.");
 
             MetadataInformation[] left = new MetadataInformation[leftContentItems.Count];
             for (int leftIndex = 0; leftIndex < leftContentItems.Count; leftIndex++)
@@ -78,25 +93,6 @@ namespace Microsoft.DotNet.PackageValidation
             }
 
             return new MetadataInformation(Path.GetFileName(item.Path), item.Path, package.PackagePath, assemblyReferences, displayString);
-        }
-
-        private static bool ContentItemCollectionEquals(IReadOnlyList<ContentItem> leftContentItems,
-            IReadOnlyList<ContentItem> rightContentItems)
-        {
-            if (leftContentItems.Count != rightContentItems.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < leftContentItems.Count; i++)
-            {
-                if (leftContentItems[i].Path != rightContentItems[i].Path)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
     }
 }

@@ -54,8 +54,8 @@ namespace Microsoft.DotNet.ApiCompat
             bool enableStrictModeForBaselineValidation,
             string? baselinePackagePath,
             string? runtimeGraph,
-            Dictionary<string, string[]>? packageAssemblyReferences,
-            Dictionary<string, string[]>? baselinePackageAssemblyReferences)
+            IReadOnlyDictionary<string, string[]>? packageAssemblyReferences,
+            IReadOnlyDictionary<string, string[]>? baselinePackageAssemblyReferences)
         {
             // Configure the suppression engine. Ignore the passed in suppression file if it should be generated and doesn't yet exist.
             string? suppressionFileForEngine = generateSuppressionFile && !File.Exists(suppressionFile) ? null : suppressionFile;
