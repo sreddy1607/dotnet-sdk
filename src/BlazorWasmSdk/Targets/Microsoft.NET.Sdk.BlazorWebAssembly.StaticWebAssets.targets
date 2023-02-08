@@ -1,0 +1,153 @@
+<!--
+***********************************************************************************************
+Microsoft.NET.Sdk.BlazorWebAssembly.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+Copyright (c) .NET Foundation. All rights reserved.
+***********************************************************************************************
+-->
+<Project ToolsVersion="14.0">
+
+  <!-- Note, this is just for demonstration purposes. When we move this to the static web assets SDK,
+       it will be an integrated step into the pipeline and we will use metadata to drive the process
+       so consumers will be able to declare what assets need to be compressed and how both at build
+       and publish time.
+  -->
+
+  <Target Name="BuildCompressAssets" AfterTargets="_ResolveBlazorWasmOutputs">
+    <PropertyGroup>
+      <_BlazorBuildGZipCompressDirectory>$(IntermediateOutputPath)build-gz\</_BlazorBuildGZipCompressDirectory>
+    </PropertyGroup>
+
+    <!--
+      Compress referenced binaries using GZip during build. This skips files such as the project's assemblies
+      that change from build to build. Runtime assets contribute to the bulk of the download size. Compressing it
+      has the most benefit while avoiding any ongoing costs to the dev inner loop.
+    -->
+
+    <ComputeBlazorFilesToCompress Assets="@(_BlazorStaticWebAsset)">
+      <Output TaskParameter="AssetsToCompress" ItemName="_GzipFileToCompressForBuild" />
+    </ComputeBlazorFilesToCompress>
+
+    <GZipCompress
+      FilesToCompress="@(_GzipFileToCompressForBuild)"
+      OutputDirectory="$(_BlazorBuildGZipCompressDirectory)">
+
+      <Output TaskParameter="CompressedFiles" ItemName="_BlazorBuildGZipCompressedFile" />
+      <Output TaskParameter="CompressedFiles" ItemName="FileWrites" />
+    </GZipCompress>
+
+    <ItemGroup>
+      <_BlazorBuildGZipCompressedFile>
+        <OriginalItemSpec>%(RelatedAsset)</OriginalItemSpec>
+      </_BlazorBuildGZipCompressedFile>
+
+      <_BlazorGzipStaticWebAsset Include="@(_BlazorBuildGZipCompressedFile->'%(FullPath)')" />
+      </ItemGroup>
+
+    <PropertyGroup>
+      <_BlazorBuildBootJsonPath>$(IntermediateOutputPath)blazor.boot.json</_BlazorBuildBootJsonPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_BuildBlazorBootJson
+        Include="$(_BlazorBuildBootJsonPath)"
+        RelativePath="_framework/blazor.boot.json" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets
+      CandidateAssets="@(_BuildBlazorBootJson)"
+      SourceId="$(PackageId)"
+      SourceType="Computed"
+      AssetKind="Build"
+      AssetRole="Primary"
+      AssetTraitName="BlazorWebAssemblyResource"
+      AssetTraitValue="manifest"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="Never"
+      ContentRoot="$(OutDir)wwwroot"
+      BasePath="$(StaticWebAssetBasePath)"
+    >
+      <Output TaskParameter="Assets" ItemName="_BuildBlazorBootJsonStaticWebAsset" />
+    </DefineStaticWebAssets>
+  </Target>
+
+  <!-- Again, this is for demonstration purposes. When this moves to the Static Web Assets SDK, we will
+       have a metadata based approach for this that allows us to define what assets need to be compressed
+       and how. -->
+       
+  <Target Name="PublishCompressAssets" AfterTargets="GeneratePublishBlazorBootJson" Condition="'$(BlazorEnableCompression)' != 'false'">
+    <PropertyGroup>
+      <_CompressedFileOutputPath>$(IntermediateOutputPath)compress\</_CompressedFileOutputPath>
+      <_BlazorWebAssemblyBrotliIncremental>true</_BlazorWebAssemblyBrotliIncremental>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(DOTNET_HOST_PATH)' == ''">
+      <_DotNetHostDirectory>$(NetCoreRoot)</_DotNetHostDirectory>
+      <_DotNetHostFileName>dotnet</_DotNetHostFileName>
+      <_DotNetHostFileName Condition="'$(OS)' == 'Windows_NT'">dotnet.exe</_DotNetHostFileName>
+    </PropertyGroup>
+
+    <Message Text="Compressing Blazor WebAssembly publish artifacts. This may take a while..." Importance="High" />
+
+    <MakeDir Directories="$(_CompressedFileOutputPath)" Condition="!Exists('$(_CompressedFileOutputPath)')" />
+
+    <ItemGroup>
+      <_GzipFileToCompressForPublish Include="@(StaticWebAsset)"
+        Condition="'%(AssetKind)' != 'Build' and ('%(StaticWebAsset.AssetTraitName)' == 'BlazorWebAssemblyResource' or '%(StaticWebAsset.AssetTraitName)' == 'Culture')" >
+        <RelatedAsset>%(Identity)</RelatedAsset>
+        <AssetRole>Alternative</AssetRole>
+        <AssetTraitName>Content-Encoding</AssetTraitName>
+        <AssetTraitValue>gzip</AssetTraitValue>
+      </_GzipFileToCompressForPublish>
+
+      <_BrotliFileToCompressForPublish Include="@(_GzipFileToCompressForPublish)" Condition="'%(AssetKind)' != 'Build'">
+        <AssetTraitValue>br</AssetTraitValue>
+      </_BrotliFileToCompressForPublish>
+
+      <!-- We compressed a bunch of assets that were not modified since the build process. We can reuse those and avoid the extra compression we just
+           need to check that they are still relevant (we have updated existing assets to account for linking) -->
+      <_AlreadyGzipCompressedAssets
+        Include="@(StaticWebAsset)"
+        Condition="'%(AssetKind)' != 'Build' and ('%(StaticWebAsset.AssetTraitName)' == 'Content-Encoding' and '%(StaticWebAsset.AssetTraitValue)' == 'gzip')" />
+      <_GzipFileToCompressForPublish Remove="@(_AlreadyGzipCompressedAssets->'%(RelatedAsset)')" />
+    </ItemGroup>
+
+    <GZipCompress
+      FilesToCompress="@(_GzipFileToCompressForPublish)"
+      OutputDirectory="$(_CompressedFileOutputPath)">
+
+      <Output TaskParameter="CompressedFiles" ItemName="_BlazorPublishGZipCompressedFile" />
+      <Output TaskParameter="CompressedFiles" ItemName="FileWrites" />
+    </GZipCompress>
+
+    <BrotliCompress
+      OutputDirectory="$(_CompressedFileOutputPath)"
+      FilesToCompress="@(_BrotliFileToCompressForPublish)"
+      CompressionLevel="$(_BlazorBrotliCompressionLevel)"
+      SkipIfOutputIsNewer="$(_BlazorWebAssemblyBrotliIncremental)"
+      ToolAssembly="$(_BlazorWebAssemblySdkToolAssembly)"
+      ToolExe="$(_DotNetHostFileName)"
+      ToolPath="$(_DotNetHostDirectory)">
+
+      <Output TaskParameter="CompressedFiles" ItemName="_BlazorPublishBrotliCompressedFile" />
+      <Output TaskParameter="CompressedFiles" ItemName="FileWrites" />
+    </BrotliCompress>
+
+    <ItemGroup>
+      <_BlazorPublishGZipCompressedFile>
+        <OriginalItemSpec>%(RelatedAsset)</OriginalItemSpec>
+      </_BlazorPublishGZipCompressedFile>
+      <_BlazorPublishBrotliCompressedFile>
+        <OriginalItemSpec>%(RelatedAsset)</OriginalItemSpec>
+      </_BlazorPublishBrotliCompressedFile>
+
+      <StaticWebAsset Include="@(_BlazorPublishGZipCompressedFile->'%(FullPath)')" />
+      <StaticWebAsset Include="@(_BlazorPublishBrotliCompressedFile->'%(FullPath)')" />
+    </ItemGroup>
+  </Target>
+
+</Project>
