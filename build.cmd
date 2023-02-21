@@ -10,7 +10,7 @@ for /f "usebackq tokens=*" %%i in (`"%programfiles(x86)%\Microsoft Visual Studio
   set DeveloperCommandPrompt="%%i"
 )
 
-if not exist "%DeveloperCommandPrompt%" (
+if not exist %DeveloperCommandPrompt% (
   echo In order to build this repository, you either need 'msbuild' on the path or Visual Studio 2015 installed.
   echo.
   echo Visit this page to download:
@@ -19,7 +19,7 @@ if not exist "%DeveloperCommandPrompt%" (
   exit /b 1
 )
 
-call "%DeveloperCommandPrompt%" || goto :BuildFailed
+call %DeveloperCommandPrompt% || goto :BuildFailed
 
 :SkipDeveloperSetup
 powershell -NoProfile -NoLogo -ExecutionPolicy Bypass -Command "& \"%~dp0build.ps1\" %*; exit $LastExitCode;"
