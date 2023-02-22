@@ -13,7 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <MergeManifest Include="$(OutputPath)PreEmptive.Solutions.Dotfuscator.CE.json" />
+    <MergeManifest Include="$(OutputPath)PreEmptive.Solutions.Dotfuscator.CE.json" 
+                   SBOMFileLocation="$(OutputPath)\_manifest\spdx_2.2\manifest.spdx.json"/>
   </ItemGroup>
 
   <ItemGroup>
