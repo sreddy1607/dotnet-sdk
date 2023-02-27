@@ -10,6 +10,8 @@
     <UseVisualStudioVersion>true</UseVisualStudioVersion>
     <FinalizeValidate>false</FinalizeValidate>
     <ValidateManifest>false</ValidateManifest>
+    <ManifestBuildVersion>$(BUILD_BUILDNUMBER)</ManifestBuildVersion>
+    <ManifestPublishUrl>https://vsdrop.corp.microsoft.com/file/v1/Products/DevDiv/dotnet/sdk/dotfuscator/$(ManifestBuildVersion);</ManifestPublishUrl>
   </PropertyGroup>
 
   <ItemGroup>
