@@ -45,6 +45,6 @@ if ($RealSign) {
     $signType = 'real'
 }
 
-msbuild /t:restore /p:RestorePackagesPath=$PackagesPath /m:1 /nologo /p:Configuration=$Configuration /p:Platform=$Platform /p:SignType=$signType $RepoRoot\src\VsixV3\PreEmptive.Solutions.Dotfuscator.CE.vsmanproj
-msbuild /p:RestorePackagesPath=$PackagesPath /m:1 /nologo /p:Configuration=$Configuration /p:Platform=$Platform /p:SignType=$signType $RepoRoot\src\VsixV3\PreEmptive.Solutions.Dotfuscator.CE.vsmanproj
+msbuild /t:restore /p:RestorePackagesPath=$PackagesPath /m:1 /nologo /p:Configuration=$Configuration /p:Platform=$Platform /p:SignType=$signType $RepoRoot\src\VsixV3\PreEmptive.Solutions.Dotfuscator.CE.vsmanproj /bl:restore.binlog
+msbuild /p:RestorePackagesPath=$PackagesPath /m:1 /nologo /p:Configuration=$Configuration /p:Platform=$Platform /p:SignType=$signType $RepoRoot\src\VsixV3\PreEmptive.Solutions.Dotfuscator.CE.vsmanproj /bl:build.binlog
 
