@@ -83,6 +83,14 @@ Copyright (c) .NET Foundation. All rights reserved.
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
+  <ItemGroup>
+    <CompressedFileIncludePattern Include="Blazor">
+      <Pattern>_framework/**</Pattern>
+      <Format>gzip</Format>
+      <Stage>Build</Stage>
+    </CompressedFileIncludePattern>
+  </ItemGroup>
+
   <!-- Wire-up static web assets -->
   <PropertyGroup>
     <ResolveStaticWebAssetsInputsDependsOn>
@@ -235,13 +243,17 @@ Copyright (c) .NET Foundation. All rights reserved.
       <Output TaskParameter="AssetsToCompress" ItemName="_GzipFileToCompressForBuild" />
     </ComputeBlazorFilesToCompress>
 
-    <GZipCompress
+    <ItemGroup>
+      <FilesToCompress Include="_GzipFileToCompressForBuild" />
+    </ItemGroup>
+
+    <!-- <GZipCompress
       FilesToCompress="@(_GzipFileToCompressForBuild)"
       OutputDirectory="$(_BlazorBuildGZipCompressDirectory)">
 
       <Output TaskParameter="CompressedFiles" ItemName="_BlazorBuildGZipCompressedFile" />
       <Output TaskParameter="CompressedFiles" ItemName="FileWrites" />
-    </GZipCompress>
+    </GZipCompress> -->
 
     <ItemGroup>
       <_BlazorBuildGZipCompressedFile>
@@ -426,15 +438,15 @@ Copyright (c) .NET Foundation. All rights reserved.
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(_PublishResolvedFilesToRemove)" />
       <StaticWebAsset Include="@(_NewBlazorPublishStaticWebAssets)" />
-      <PublishBlazorBootStaticWebAsset 
+      <PublishBlazorBootStaticWebAsset
         Include="@(StaticWebAsset)"
-        Condition="'%(AssetKind)' != 'Build' and 
+        Condition="'%(AssetKind)' != 'Build' and
                     (('%(StaticWebAsset.AssetTraitName)' == 'BlazorWebAssemblyResource' and '%(StaticWebAsset.AssetTraitValue)' != 'manifest' and '%(StaticWebAsset.AssetTraitValue)' != 'boot') or
                     '%(StaticWebAsset.AssetTraitName)' == 'Culture')" />
     </ItemGroup>
   </Target>
 
-  <Target 
+  <Target
     Name="ComputeBlazorExtensions"
     AfterTargets="ProcessPublishFilesForBlazor"
     DependsOnTargets="$(ComputeBlazorExtensionsDependsOn)" >

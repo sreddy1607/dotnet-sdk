@@ -1,0 +1,81 @@
+<!--
+***********************************************************************************************
+Microsoft.NET.Sdk.StaticWebAssets.JsModule.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+Copyright (c) .NET Foundation. All rights reserved.
+***********************************************************************************************
+-->
+
+<Project ToolsVersion="14.0">
+
+  <UsingTask TaskName="Microsoft.AspNetCore.StaticWebAssets.Tasks.GenerateJsModuleManifest" AssemblyFile="$(StaticWebAssetsSdkBuildTasksAssembly)" />
+  <UsingTask TaskName="Microsoft.AspNetCore.StaticWebAssets.Tasks.ApplyJsModules" AssemblyFile="$(StaticWebAssetsSdkBuildTasksAssembly)" />
+
+  <PropertyGroup>
+    <ResolveCompressedFilesDependsOn></ResolveCompressedFilesDependsOn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <StaticWebAssetsPrepareForRunDependsOn>
+      $(StaticWebAssetsPrepareForRunDependsOn);
+      _CompressBuildFiles;
+    </StaticWebAssetsPrepareForRunDependsOn>
+
+    <ResolveStaticWebAssetsInputsDependsOn>
+      $(ResolveStaticWebAssetsInputsDependsOn);
+      ResolveCompressedFiles;
+    </ResolveStaticWebAssetsInputsDependsOn>
+
+  </PropertyGroup>
+
+  <Target
+    Name="ResolveCompressedFiles"
+    DependsOnTargets="$(ResolveCompressedFilesDependsOn)">
+
+    <!-- Evaluate the list of candidates and explicit files.
+         * Check candidates path against include and exclude patterns.
+         * Exclude patterns win over include patterns.
+         * Return the list of files that match.
+         * Return their future asset definition.
+    -->
+    <ResolveCompressedAssets
+      Candidates="@(StaticWebAsset)"
+      Include="@(CompressedFileIncludePattern)"
+      Exclude="@(CompressedFileExcludePattern)"
+    >
+      <Output
+        TaskParameter="FilesToCompress"
+        ItemName="FilesToCompress" />
+
+      <Output
+        TaskParameter="Assets"
+        ItemName="_compressedStaticWebAssets" />
+
+    </ResolveCompressedAssets>
+
+    <ItemGroup>
+      <StaticWebAsset Include="@(_compressedStaticWebAssets)" />
+    </Itemgroup>
+
+  </Target>
+
+  <!-- FilesToCompress
+       * ItemSpec (Source)
+       * TargetPath (location on disk to put the compressed file)
+       * Format (gzip, brotli)
+  -->
+  <Target Name="_CompressBuildFiles">
+    <CompressFiles
+      Assets="@(FilesToCompress)" />
+
+    <ItemGroup>
+      <FileWrites Include="@(FilesToCompress->TargetPath)" />
+    </Itemgroup>
+  </Target>
+
+</Project>
