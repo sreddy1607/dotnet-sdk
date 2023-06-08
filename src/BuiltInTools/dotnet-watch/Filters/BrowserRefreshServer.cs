@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -53,10 +54,107 @@ namespace Microsoft.DotNet.Watcher.Tools
 
         public string ServerKey => Convert.ToBase64String(_rsa.ExportSubjectPublicKeyInfo());
 
+        private Uri GetAsUri(string uri, string environmentVariableKey)
+        {
+            try
+            {
+                return new Uri(uri);
+            }
+            catch (Exception ex)
+            {
+                _reporter.Error($"Environment variable {environmentVariableKey}={uri} not a valid Uri.");
+                _reporter.Verbose($"New Uri exception: {ex}");
+            }
+
+            return null;
+        }
+
+        private IEnumerable<Uri> GetAsUris(string[] uris, string environmentVariableKey)
+        {
+            return uris.Select(uri => GetAsUri(uri, environmentVariableKey));
+        }
+
+        private void SuggestEnvironmentVariableFormat(string envEndpoints)
+        {
+            _reporter.Verbose($"This is not accepted: '{envEndpoints}'.");
+            _reporter.Verbose("Try something like: 'https://localhost:43399,http://localhost:8099'.");
+        }
+
         public async ValueTask<IEnumerable<string>> StartAsync(CancellationToken cancellationToken)
         {
-            var envHostName = Environment.GetEnvironmentVariable("DOTNET_WATCH_AUTO_RELOAD_WS_HOSTNAME");
-            var hostName = envHostName ?? "127.0.0.1";
+            const string wsEndpointsKey = "DOTNET_WATCH_AUTO_RELOAD_WS_ENDPOINT";
+            const string wsHostnameKey = "DOTNET_WATCH_AUTO_RELOAD_WS_HOSTNAME";
+            Uri endpointSecure = null;
+            Uri endpoint = null;
+            var envEndpoints = Environment.GetEnvironmentVariable(wsEndpointsKey);
+            var messagePrefix = () => $"{wsEndpointsKey} = '{envEndpoints}'";
+
+            if (!string.IsNullOrWhiteSpace(envEndpoints))
+            {
+                var success = false;
+                _reporter.Verbose($"{messagePrefix}. Attepmting to set WebSockets endpoints.");
+
+                if (envEndpoints.Contains(','))
+                {
+                    var tokens = envEndpoints.Split(',');
+
+                    if (tokens.Length != 2)
+                    {
+                        _reporter.Error($"Environment variable {wsEndpointsKey} cannot contain more than two endpoints.");
+                        SuggestEnvironmentVariableFormat(envEndpoints);
+                    }
+                    else
+                    {
+                        var uris = GetAsUris(tokens, wsEndpointsKey);
+                        endpointSecure = uris.SingleOrDefault(uri => uri.Scheme == "https");
+                        endpoint = uris.SingleOrDefault(uri => uri.Scheme == "http");
+
+                        if (endpointSecure == null || endpoint == null)
+                        {
+                            _reporter.Error($"When prodviding two {wsEndpointsKey} endpoints, one must be secure (https) and the other insecure (http).");
+                            SuggestEnvironmentVariableFormat(envEndpoints);
+                            endpointSecure = null;
+                            endpoint = null;
+                        }
+                        else
+                        {
+                            success = true;
+                        }
+                    }
+                }
+                else
+                {
+                    endpoint = GetAsUri(envEndpoints, wsEndpointsKey);
+
+                    if (endpoint.Scheme != "http")
+                    {
+                        _reporter.Error($"When prodviding only one {wsEndpointsKey} endpoint, it must be insecure (http).");
+                    }
+                    else
+                    {
+                        success = true;
+                    }
+                }
+
+                if (success)
+                {
+                    _reporter.Verbose($"Applying {messagePrefix} succeeded.");
+                }
+                else
+                {
+                    _reporter.Error($"Setting {messagePrefix} failed.");
+                }
+            }
+
+            // Only attempt to use the DOTNET_WATCH_AUTO_RELOAD_WS_HOSTNAME environment variable
+            // when the DOTNET_WATCH_AUTO_RELOAD_WS_ENDPOINT environment variable is not specified.
+            if (endpointSecure == null && endpoint == null)
+            {
+                var envHostName = Environment.GetEnvironmentVariable(wsHostnameKey);
+                var hostName = envHostName ?? "127.0.0.1";
+                endpointSecure = GetAsUri($"https://{hostName}:0", wsHostnameKey);
+                endpoint = GetAsUri($"http://{hostName}:0", wsHostnameKey);
+            }
 
             var supportsTLS = await SupportsTLS();
 
@@ -66,11 +164,11 @@ namespace Microsoft.DotNet.Watcher.Tools
                     builder.UseKestrel();
                     if (supportsTLS)
                     {
-                        builder.UseUrls($"https://{hostName}:0", $"http://{hostName}:0");
+                        builder.UseUrls(endpointSecure.ToString(), endpoint.ToString());
                     }
                     else
                     {
-                        builder.UseUrls($"http://{hostName}:0");
+                        builder.UseUrls(endpoint.ToString());
                     }
 
                     builder.Configure(app =>
@@ -89,17 +187,18 @@ namespace Microsoft.DotNet.Watcher.Tools
                 .Get<IServerAddressesFeature>()
                 .Addresses;
 
-            if (envHostName is null)
-            {
-                return serverUrls.Select(s =>
-                    s.Replace("http://127.0.0.1", "ws://localhost", StringComparison.Ordinal)
-                    .Replace("https://127.0.0.1", "wss://localhost", StringComparison.Ordinal));
-            }
+            // if (envHostName is null)
+            // {
+            //     return serverUrls.Select(s =>
+            //         s.Replace("http://127.0.0.1", "ws://localhost", StringComparison.Ordinal)
+            //         .Replace("https://127.0.0.1", "wss://localhost", StringComparison.Ordinal));
+            // }
 
             return new[]
             {
                 serverUrls
                     .First()
+                    .Replace("127.0.0.1", "localhost", StringComparison.Ordinal)
                     .Replace("https://", "wss://", StringComparison.Ordinal)
                     .Replace("http://", "ws://", StringComparison.Ordinal)
              };
