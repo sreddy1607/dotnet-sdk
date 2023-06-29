@@ -9,7 +9,7 @@ using Microsoft.TemplateEngine.Edge.Settings;
 
 namespace Microsoft.TemplateEngine.Cli.Commands
 {
-    internal partial class NewCommand : BaseCommand<NewCommandArgs>, ICustomHelp
+    internal partial class NewCommand : BaseCommand<NewCommandArgs>, ICustomHelp, IInteractiveMode
     {
         internal NewCommand(
             string commandName,
@@ -43,6 +43,7 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             this.AddOption(SharedOptions.ForceOption);
             this.AddOption(SharedOptions.NoUpdateCheckOption);
             this.AddOption(SharedOptions.ProjectPathOption);
+            this.AddOption(InteractiveMode.InteractiveMode.InteractiveOption);
         }
 
         internal static Option<string?> DebugCustomSettingsLocationOption { get; } = new("--debug:custom-hive")
@@ -102,6 +103,13 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             SharedOptions.DryRunOption,
             SharedOptions.NoUpdateCheckOption
         };
+
+        public Task<Questionnaire> GetQuestionsAsync(InvocationContext context, CancellationToken cancellationToken)
+        {
+            InstantiateCommandArgs instantiateCommandArgs = InstantiateCommandArgs.FromNewCommandArgs(ParseContext(context.ParseResult));
+            using IEngineEnvironmentSettings environmentSettings = CreateEnvironmentSettings(instantiateCommandArgs, context.ParseResult);
+            return InstantiateCommand.GetQuestionsInternalAsync(context, instantiateCommandArgs, environmentSettings);
+        }
 
         protected internal override IEnumerable<CompletionItem> GetCompletions(CompletionContext context, IEngineEnvironmentSettings environmentSettings, TemplatePackageManager templatePackageManager)
         {

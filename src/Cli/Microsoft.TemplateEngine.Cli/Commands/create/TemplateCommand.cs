@@ -123,6 +123,7 @@ namespace Microsoft.TemplateEngine.Cli.Commands
 
         internal Option<string>? BaselineOption { get; }
 
+        // string key is the name of the option
         internal IReadOnlyDictionary<string, TemplateOption> TemplateOptions => _templateSpecificOptions;
 
         internal CliTemplateInfo Template => _template;
@@ -214,6 +215,31 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             }
 
             return instantiateTask.Result;
+        }
+
+        // Check what is still missing for sucessfull creation
+        // Figure out the type to return for the function,
+        // or if we will have multiple functions with different types
+        internal IEnumerable<KeyValuePair<string, CliTemplateParameter>> GetMissingArguments(
+            string[] userEnteredParams)
+        // List<TemplateOption> passedOptions)
+        {
+            //var remainingOptions = TemplateOptions.Where(option => !passedOptions.Contains(option.Value));
+            //foreach (var option in remainingOptions)
+            //{
+            //    // yield return option;
+            //}
+
+            var templateParams = Template.CliParameters;
+
+            foreach (var param in templateParams)
+            {
+                if (!userEnteredParams.Contains(param.Key))
+                {
+                    yield return param;
+                }
+
+            }
         }
 
         private void DisplayConstraintResults(IReadOnlyList<TemplateConstraintResult> constraintResults, TemplateCommandArgs templateArgs)
