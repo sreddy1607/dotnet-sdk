@@ -138,6 +138,10 @@ Copyright (c) .NET Foundation. All rights reserved.
                    ResourceName="PublishProfileNotPresent"
                    FormatArguments="$(PublishProfile)"/>
 
+    <!-- If the TFM is valid, ProcessFrameworkReferences task will warn in restore. If we reach here without a ILCompiler pack, its an invalid TFM -->
+    <NETSdkError Condition="'$(PublishAOT)' == 'true' and '@(TargetILCompilerPack)' == '' and '@(HostILCompilerPack)' == ''"
+                 ResourceName="AotUnsupportedTargetFramework" />
+
     <!-- Projects in a solution cannot have conflicting configurations. This checks if PublishRelease conflicted at runtime to avoid extra project evaluations.
     SolutionExt is used to check if we are publishing a solution. Will be undefined if not.-->
     <NETSdkError Condition="'$(_IsPublishing)' == 'true' and
