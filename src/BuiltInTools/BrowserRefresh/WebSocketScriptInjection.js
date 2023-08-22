@@ -143,14 +143,14 @@ setTimeout(async function () {
           console.warn(error);
           applyError = error;
         }
-      }); 
+      });
     }
 
     fetch('/_framework/blazor-hotreload', { method: 'post', headers: { 'content-type': 'application/json' }, body: JSON.stringify(deltas) })
       .then(response => {
         if (response.status == 200) {
-          const etag = response.headers['etag'];
-          window.sessionStorage.setItem('blazor-webassembly-cache', { etag, deltas });
+          const etag = response.headers.get('etag');
+          updateBlazorWebAssemblyDeltasCache(etag, deltas);
         }
       });
 
@@ -160,6 +160,45 @@ setTimeout(async function () {
       sendDeltaApplied();
       notifyHotReloadApplied();
     }
+  }
+
+  async function updateBlazorWebAssemblyDeltasCache(newEtag, newDeltas) {
+    const cacheKey = 'blazor-webassembly-cache';
+    const cacheJson = window.sessionStorage.getItem(cacheKey);
+
+    let etag;
+    let deltas;
+
+    if (cacheJson) {
+      // The cache already exists, so we'll add the new deltas to it
+      const cache = JSON.parse(cacheJson);
+      const cachedDeltas = cache.deltas;
+      const lastCachedEntry = cachedDeltas && cachedDeltas.at(-1);
+      const firstNewEntry = newDeltas[0];
+      if ((lastCachedEntry && lastCachedEntry.sequenceId) !== firstNewEntry.sequenceId - 1) {
+        // This is a sanity check to ensure deltas aren't duplicated or skipped.
+        // If they are, we avoid updating the cache. The cache's outdated Etag
+        // will cause future cache misses, but otherwise shouldn't affect hot reload
+        // functionality.
+        console.warn('Unable to update the hot reload deltas cache');
+        return;
+      }
+
+      etag = newEtag;
+      deltas = [...cachedDeltas, ...newDeltas];
+    } else {
+      // The cache has not been initialized, so we populate it with all
+      // deltas from the current session
+      const response = await fetch('/_framework/blazor-hotreload');
+      if (response.status !== 200) {
+        return;
+      }
+
+      etag = response.headers.get('etag');
+      deltas = await response.json();
+    }
+
+    window.sessionStorage.setItem(cacheKey, JSON.stringify({ etag, deltas }));
   }
 
   function displayDiagnostics(diagnostics) {
