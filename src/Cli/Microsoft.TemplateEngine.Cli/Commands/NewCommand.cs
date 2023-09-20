@@ -17,6 +17,10 @@ namespace Microsoft.TemplateEngine.Cli.Commands
         {
             this.TreatUnmatchedTokensAsErrors = true;
 
+            this.Arguments.Add(ShortNameArgument);
+            this.Arguments.Add(NameArgument);
+            this.Arguments.Add(RemainingArguments);
+
             //it is important that legacy commands are built before non-legacy, as non legacy commands are building validators that rely on legacy stuff
             BuildLegacySymbols(hostBuilder);
 
@@ -90,6 +94,17 @@ namespace Microsoft.TemplateEngine.Cli.Commands
         {
             Description = SymbolStrings.Command_Instantiate_Argument_ShortName,
             Arity = new ArgumentArity(0, 1),
+            Hidden = true
+        };
+
+        // This is only used to let the help generation know there is a name argument.
+        // It doesn't contribute to parsing the arguments because the arity is set to 0.
+        // InstantiateCommand reparses the arguments in the context of TemplateCommand to properly parse the name.
+        // This argument contributes to the help output provided by WriteCustomInstantiateHelp.
+        internal static CliArgument<string> NameArgument { get; } = new CliArgument<string>("name")
+        {
+            Description = SymbolStrings.TemplateCommand_Option_Name,
+            Arity = new ArgumentArity(0, 0),
             Hidden = true
         };
 

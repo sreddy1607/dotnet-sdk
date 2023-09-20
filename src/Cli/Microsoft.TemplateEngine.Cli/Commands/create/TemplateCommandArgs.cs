@@ -8,6 +8,10 @@ namespace Microsoft.TemplateEngine.Cli.Commands
 {
     internal class TemplateCommandArgs : ICommandArgs
     {
+        // When detecting template arguments, we need to reparse the command so it doesn't use a template argument as a name.
+        // To do this, we inject this sentinel name so it is handled the same as if the user didn't put in a name argument.
+        public const string NameDefaultSentinel = "~~DefaultName~~";
+
         private readonly TemplateCommand _command;
         private Dictionary<string, OptionResult> _templateOptions = new Dictionary<string, OptionResult>();
 
@@ -18,7 +22,23 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             ParentCommand = parentCommand ?? throw new ArgumentNullException(nameof(parentCommand));
             RootCommand = GetRootCommand(parentCommand);
 
-            Name = parseResult.GetValueForOptionOrNull(SharedOptions.NameOption);
+            // Prefer the name argument over the hidden name option (which is kept for backward compatibility).
+            var nameArgument = parseResult.GetValue(SharedOptions.NameArgument);
+            if (nameArgument == NameDefaultSentinel)
+            {
+                nameArgument = null;
+            }
+            var nameOption = parseResult.GetValueForOptionOrNull(SharedOptions.NameOption);
+            _command.Validators.Add(commandResult =>
+            {
+                if (nameArgument is not null && nameOption is not null)
+                {
+                    commandResult.AddError(LocalizableStrings.Commands_Validator_NameArgumentOptionConflict, nameArgument, nameOption);
+                }
+            });
+
+            Name = nameArgument ?? nameOption;
+
             IsForceFlagSpecified = parseResult.GetValue(SharedOptions.ForceOption);
             IsDryRun = parseResult.GetValue(SharedOptions.DryRunOption);
             NoUpdateCheck = parseResult.GetValue(SharedOptions.NoUpdateCheckOption);

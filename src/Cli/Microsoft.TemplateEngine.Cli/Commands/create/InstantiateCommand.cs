@@ -20,6 +20,7 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             : base(hostBuilder, "create", SymbolStrings.Command_Instantiate_Description)
         {
             this.Arguments.Add(ShortNameArgument);
+            this.Arguments.Add(SharedOptions.NameArgument);
             this.Arguments.Add(RemainingArguments);
 
             this.Options.Add(SharedOptions.OutputOption);
@@ -172,6 +173,24 @@ namespace Microsoft.TemplateEngine.Cli.Commands
             }
         }
 
+        // Reparses the CLI parameters in the context of the provided command (usually TemplateCommand).
+        // If the first token after reparsing starts with a dash, we reparse again and inject a name sentinel to allow it to be handled properly (using empty name logic).
+        internal static ParseResult Reparse(CliCommand command, IReadOnlyList<string> args, CliConfiguration? configuration = null)
+        {
+            var argsList = args.ToList();
+            ParseResult parseResult = command.Parse(args, configuration);
+
+            var firstTemplateCommandToken = parseResult.CommandResult.Tokens.FirstOrDefault()?.Value ?? string.Empty;
+            int tokenIndex;
+            if (firstTemplateCommandToken.StartsWith('-') && (tokenIndex = argsList.IndexOf(firstTemplateCommandToken)) >= 0)
+            {
+                argsList.Insert(tokenIndex, TemplateCommandArgs.NameDefaultSentinel);
+                parseResult = command.Parse(argsList, configuration);
+            }
+
+            return parseResult;
+        }
+
         protected override async Task<NewCommandStatus> ExecuteAsync(
             InstantiateCommandArgs instantiateArgs,
             IEngineEnvironmentSettings environmentSettings,
@@ -273,9 +292,7 @@ namespace Microsoft.TemplateEngine.Cli.Commands
                 TemplateCommand templateCommandToRun = candidates.Single();
                 args.Command.Subcommands.Add(templateCommandToRun);
 
-                ParseResult updatedParseResult = args.ParseResult.RootCommandResult.Command.Parse(
-                    args.ParseResult.Tokens.Select(t => t.Value).ToArray(),
-                    args.ParseResult.Configuration);
+                ParseResult updatedParseResult = Reparse(args.ParseResult.RootCommandResult.Command, args.ParseResult.Tokens.Select(t => t.Value).ToArray(), args.ParseResult.Configuration);
                 return await candidates.Single().InvokeAsync(updatedParseResult, cancellationToken).ConfigureAwait(false);
             }
             else if (candidates.Any())
@@ -434,8 +451,7 @@ namespace Microsoft.TemplateEngine.Cli.Commands
                     template,
                     validateDefaultLanguage);
 
-                CliConfiguration parser = ParserFactory.CreateParser(command);
-                ParseResult parseResult = parser.Parse(args.RemainingArguments ?? Array.Empty<string>());
+                ParseResult parseResult = Reparse(command, args.RemainingArguments ?? Array.Empty<string>());
                 return (command, parseResult);
             }
             catch (InvalidTemplateParametersException e)
