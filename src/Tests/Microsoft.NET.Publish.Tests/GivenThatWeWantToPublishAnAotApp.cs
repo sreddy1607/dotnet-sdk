@@ -18,7 +18,7 @@ namespace Microsoft.NET.Publish.Tests
         {
         }
 
-        [RequiresMSBuildVersionTheory("17.8.0")]
+        [Theory]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_hw_runs_with_no_warnings_when_PublishAot_is_enabled(string targetFramework)
         {
@@ -72,7 +72,36 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("Hello World");
         }
 
-        [RequiresMSBuildVersionTheory("17.8.0")]
+        [Fact]
+        public void NoCopyOutputSymbolsToPublishDirectory()
+        {
+            var targetFramework = ToolsetInfo.CurrentTargetFramework;
+            var projectName = "HellowWorldNativeAotApp";
+            var rid = EnvironmentInfo.GetCompatibleRid(targetFramework);
+
+            var testProject = CreateHelloWorldTestProject(targetFramework, projectName, true);
+            testProject.AdditionalProperties["PublishAot"] = "true";
+            testProject.AdditionalProperties["CopyOutputSymbolsToPublishDirectory"] = "false";
+            var testAsset = _testAssetsManager.CreateTestProject(testProject);
+
+            var publishCommand = new PublishCommand(testAsset);
+            publishCommand
+                .Execute($"/p:RuntimeIdentifier={rid}", "/p:SelfContained=true")
+                .Should().Pass();
+
+            var publishDirectory = publishCommand.GetOutputDirectory(targetFramework: targetFramework, runtimeIdentifier: rid).FullName;
+            var publishedExe = Path.Combine(publishDirectory, $"{testProject.Name}{Constants.ExeSuffix}");
+
+            var command = new RunExeCommand(Log, publishedExe)
+                .Execute().Should().Pass()
+                .And.HaveStdOutContaining("Hello World");
+
+            // No Symbols in publish directory
+            DoSymbolsExist(publishDirectory, testProject.Name).Should().BeFalse();
+            IsNativeImage(publishedExe).Should().BeTrue();
+        }
+
+        [Theory]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_hw_runs_with_no_warnings_when_PublishAot_is_false(string targetFramework)
         {
@@ -107,7 +136,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_app_runs_in_debug_with_no_config_when_PublishAot_is_enabled(string targetFramework)
         {
@@ -160,7 +189,7 @@ namespace Microsoft.NET.Publish.Tests
                 .Execute().Should().Pass();
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_app_runs_in_release_with_no_config_when_PublishAot_is_enabled(string targetFramework)
         {
@@ -212,7 +241,7 @@ namespace Microsoft.NET.Publish.Tests
                 .Execute().Should().Pass();
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_app_builds_with_config_when_PublishAot_is_enabled(string targetFramework)
         {
@@ -246,7 +275,7 @@ namespace Microsoft.NET.Publish.Tests
             File.Exists(depsPath).Should().BeTrue();
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_runs_with_PackageReference_PublishAot_is_enabled(string targetFramework)
         {
@@ -302,7 +331,7 @@ namespace Microsoft.NET.Publish.Tests
             CheckIlcVersions(testAsset, targetFramework, rid, ExplicitPackageVersion);
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_runs_with_PackageReference_PublishAot_is_empty(string targetFramework)
         {
@@ -339,7 +368,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("Hello World");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_hw_runs_with_cross_target_PublishAot_is_enabled(string targetFramework)
         {
@@ -369,7 +398,7 @@ namespace Microsoft.NET.Publish.Tests
         }
 
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_hw_runs_with_cross_PackageReference_PublishAot_is_enabled(string targetFramework)
         {
@@ -405,7 +434,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_runs_with_cross_PackageReference_PublishAot_is_empty(string targetFramework)
         {
@@ -434,7 +463,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionFact("17.0.0.32901")]
+        [Fact]
         public void NativeAot_hw_fails_with_sdk6_PublishAot_is_enabled()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -454,7 +483,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_fails_with_sdk6_PackageReference_PublishAot_is_enabled(string targetFramework)
         {
@@ -478,7 +507,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_fails_with_unsupported_target_rid(string targetFramework)
         {
@@ -502,7 +531,7 @@ namespace Microsoft.NET.Publish.Tests
             }
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAot_hw_fails_with_unsupported_host_rid(string targetFramework)
         {
@@ -534,7 +563,7 @@ namespace Microsoft.NET.Publish.Tests
                     new XElement(ns + "ILCompilerRuntimeIdentifiers", runtimeIdentifiers))));
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void Only_Aot_warnings_are_produced_if_EnableAotAnalyzer_is_set(string targetFramework)
         {
@@ -556,7 +585,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.NotHaveStdOutContaining("warning IL3002");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void IsAotCompatible_implies_enable_analyzers(string targetFramework)
         {
@@ -590,7 +619,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.NotHaveStdOutContaining("warning IL3002");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData("netstandard2.0")]
         public void IsAotCompatible_warns_for_unsupported_target_framework(string targetFramework)
         {
@@ -611,7 +640,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("warning NETSDK1210");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void Requires_analyzers_produce_warnings_without_PublishAot_being_set(string targetFramework)
         {
@@ -637,7 +666,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("warning IL3002");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_compiler_runs_when_PublishAot_is_enabled(string targetFramework)
         {
@@ -681,7 +710,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("Hello world");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void Warnings_are_generated_even_with_analyzers_disabled(string targetFramework)
         {
@@ -722,7 +751,7 @@ namespace Microsoft.NET.Publish.Tests
                 .And.HaveStdOutContaining("Hello world");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAotStaticLib_only_runs_when_switch_is_enabled(string targetFramework)
         {
@@ -778,7 +807,7 @@ namespace Microsoft.NET.Publish.Tests
             // .And.HaveStdOutContaining("EventSource is not supported or recommended when compiling to a native library");
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void NativeAotSharedLib_only_runs_when_switch_is_enabled(string targetFramework)
         {
@@ -808,7 +837,7 @@ namespace Microsoft.NET.Publish.Tests
             IsNativeImage(publishedDll).Should().BeTrue();
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void It_publishes_with_implicit_rid_with_NativeAotApp(string targetFramework)
         {
@@ -824,7 +853,7 @@ namespace Microsoft.NET.Publish.Tests
                 .Pass();
         }
 
-        [RequiresMSBuildVersionTheory("17.0.0.32901")]
+        [Theory]
         [InlineData(ToolsetInfo.CurrentTargetFramework)]
         public void It_builds_with_dynamiccodesupport_false_when_publishaot_true(string targetFramework)
         {
