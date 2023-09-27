@@ -94,17 +94,7 @@ namespace Microsoft.DotNet.Watcher.Internal
         }
 
         private void WatcherChangedHandler(object sender, (string changedPath, bool newFile) args)
-        {
-            NotifyChange(args.changedPath, args.newFile);
-        }
-
-        private void NotifyChange(string path, bool newFile)
-        {
-            if (OnFileChange != null)
-            {
-                OnFileChange(path, newFile);
-            }
-        }
+            => OnFileChange?.Invoke(args.changedPath, args.newFile);
 
         private void DisposeWatcher(string directory)
         {

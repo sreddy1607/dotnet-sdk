@@ -1,22 +1,23 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-#nullable disable
-
 using System.ComponentModel;
+using System.Diagnostics;
 using Microsoft.Extensions.Tools.Internal;
 
 namespace Microsoft.DotNet.Watcher.Internal
 {
     internal class DotnetFileWatcher : IFileSystemWatcher
     {
-        private volatile bool _disposed;
-
+        public string BasePath { get; }
+        private readonly object _createLock = new();
         private readonly Func<string, FileSystemWatcher> _watcherFactory;
 
-        private FileSystemWatcher _fileSystemWatcher;
+        private FileSystemWatcher? _fileSystemWatcher;
+        private volatile bool _disposed;
 
-        private readonly object _createLock = new object();
+        public event EventHandler<(string, bool)>? OnFileChange;
+        public event EventHandler<Exception>? OnError;
 
         public DotnetFileWatcher(string watchedDirectory)
             : this(watchedDirectory, DefaultWatcherFactory)
@@ -32,12 +33,6 @@ namespace Microsoft.DotNet.Watcher.Internal
             _watcherFactory = fileSystemWatcherFactory;
             CreateFileSystemWatcher();
         }
-
-        public event EventHandler<(string, bool)> OnFileChange;
-
-        public event EventHandler<Exception> OnError;
-
-        public string BasePath { get; }
 
         private static FileSystemWatcher DefaultWatcherFactory(string watchedDirectory)
         {
@@ -58,7 +53,7 @@ namespace Microsoft.DotNet.Watcher.Internal
             // Win32Exception may be triggered when setting EnableRaisingEvents on a file system type
             // that is not supported, such as a network share. Don't attempt to recreate the watcher
             // in this case as it will cause a StackOverflowException
-            if (!(exception is Win32Exception))
+            if (exception is not Win32Exception)
             {
                 // Recreate the watcher if it is a recoverable error.
                 CreateFileSystemWatcher();
@@ -143,6 +138,8 @@ namespace Microsoft.DotNet.Watcher.Internal
 
         private void DisposeInnerWatcher()
         {
+            Debug.Assert(_fileSystemWatcher != null);
+
             _fileSystemWatcher.EnableRaisingEvents = false;
 
             _fileSystemWatcher.Created -= WatcherAddedHandler;
@@ -156,8 +153,8 @@ namespace Microsoft.DotNet.Watcher.Internal
 
         public bool EnableRaisingEvents
         {
-            get => _fileSystemWatcher.EnableRaisingEvents;
-            set => _fileSystemWatcher.EnableRaisingEvents = value;
+            get => _fileSystemWatcher!.EnableRaisingEvents;
+            set => _fileSystemWatcher!.EnableRaisingEvents = value;
         }
 
         public void Dispose()

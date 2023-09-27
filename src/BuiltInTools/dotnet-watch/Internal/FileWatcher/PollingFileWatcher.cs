@@ -1,52 +1,45 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-#nullable disable
-
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Security;
 using Microsoft.Extensions.Tools.Internal;
 
 namespace Microsoft.DotNet.Watcher.Internal
 {
-    internal class PollingFileWatcher : IFileSystemWatcher
+    internal sealed class PollingFileWatcher : IFileSystemWatcher
     {
         // The minimum interval to rerun the scan
-        private static readonly TimeSpan _minRunInternal = TimeSpan.FromSeconds(.5);
+        private static readonly TimeSpan s_minRunInternal = TimeSpan.FromSeconds(.5);
 
         private readonly DirectoryInfo _watchedDirectory;
+        private readonly Thread _pollingThread;
 
-        private Dictionary<string, FileMeta> _knownEntities = new Dictionary<string, FileMeta>();
-        private Dictionary<string, FileMeta> _tempDictionary = new Dictionary<string, FileMeta>();
-        private HashSet<string> _changes = new HashSet<string>();
-
-        private Thread _pollingThread;
         private bool _raiseEvents;
+        private volatile bool _disposed;
 
-        private bool _disposed;
+        public event EventHandler<(string filePath, bool newFile)>? OnFileChange;
 
         public PollingFileWatcher(string watchedDirectory)
         {
             Ensure.NotNullOrEmpty(watchedDirectory, nameof(watchedDirectory));
 
             _watchedDirectory = new DirectoryInfo(watchedDirectory);
-            BasePath = _watchedDirectory.FullName;
 
-            _pollingThread = new Thread(new ThreadStart(PollingLoop));
-            _pollingThread.IsBackground = true;
-            _pollingThread.Name = nameof(PollingFileWatcher);
-
-            CreateKnownFilesSnapshot();
+            _pollingThread = new Thread(new ThreadStart(PollingLoop))
+            {
+                IsBackground = true,
+                Name = nameof(PollingFileWatcher)
+            };
 
             _pollingThread.Start();
         }
 
-        public event EventHandler<(string, bool)> OnFileChange;
+        public event EventHandler<Exception>? OnError { add { } remove { } }
 
-#pragma warning disable CS0067 // not used
-        public event EventHandler<Exception> OnError;
-#pragma warning restore
-
-        public string BasePath { get; }
+        public string BasePath
+            => _watchedDirectory.FullName;
 
         public bool EnableRaisingEvents
         {
@@ -60,17 +53,20 @@ namespace Microsoft.DotNet.Watcher.Internal
 
         private void PollingLoop()
         {
+            var currentSnapshot = CreateDirectorySnapshot(_watchedDirectory);
+            var changes = new HashSet<string>();
+
             var stopwatch = Stopwatch.StartNew();
             stopwatch.Start();
 
             while (!_disposed)
             {
-                if (stopwatch.Elapsed < _minRunInternal)
+                if (stopwatch.Elapsed < s_minRunInternal)
                 {
                     // Don't run too often
                     // The min wait time here can be double
                     // the value of the variable (FYI)
-                    Thread.Sleep(_minRunInternal);
+                    Thread.Sleep(s_minRunInternal);
                 }
 
                 stopwatch.Reset();
@@ -80,148 +76,133 @@ namespace Microsoft.DotNet.Watcher.Internal
                     continue;
                 }
 
-                CheckForChangedFiles();
+                var newSnapshot = CreateDirectorySnapshot(_watchedDirectory);
+                RecordChanges(changes, currentSnapshot, newSnapshot);
+
+                NotifyChanges(changes);
+                changes.Clear();
+
+                currentSnapshot = newSnapshot;
             }
 
             stopwatch.Stop();
         }
 
-        private void CreateKnownFilesSnapshot()
+        private void RecordChanges(
+            HashSet<string> changes,
+            ImmutableDictionary<string, FileSystemInfo> oldSnapshot,
+            ImmutableDictionary<string, FileSystemInfo> newSnapshot)
         {
-            _knownEntities.Clear();
-
-            ForeachEntityInDirectory(_watchedDirectory, f =>
+            foreach (var (fullPath, newInfo) in newSnapshot)
             {
-                _knownEntities.Add(f.FullName, new FileMeta(f));
-            });
-        }
-
-        private void CheckForChangedFiles()
-        {
-            _changes.Clear();
-
-            ForeachEntityInDirectory(_watchedDirectory, f =>
-            {
-                var fullFilePath = f.FullName;
-
-                if (!_knownEntities.ContainsKey(fullFilePath))
+                if (oldSnapshot.TryGetValue(fullPath, out var oldInfo))
                 {
-                    // New file
-                    RecordChange(f);
-                }
-                else
-                {
-                    var fileMeta = _knownEntities[fullFilePath];
-
                     try
                     {
-                        if (fileMeta.FileInfo.LastWriteTime != f.LastWriteTime)
+                        if (oldInfo.LastWriteTimeUtc != newInfo.LastWriteTimeUtc)
                         {
                             // File changed
-                            RecordChange(f);
+                            RecordChange(newInfo);
                         }
-
-                        _knownEntities[fullFilePath] = new FileMeta(fileMeta.FileInfo, true);
                     }
                     catch (FileNotFoundException)
                     {
-                        _knownEntities[fullFilePath] = new FileMeta(fileMeta.FileInfo, false);
+                        // File deleted
+                        RecordChange(oldInfo);
                     }
-                }
-
-                _tempDictionary.Add(f.FullName, new FileMeta(f));
-            });
-
-            foreach (var file in _knownEntities)
-            {
-                if (!file.Value.FoundAgain)
-                {
-                    // File deleted
-                    RecordChange(file.Value.FileInfo);
-                }
-            }
-
-            NotifyChanges();
-
-            // Swap the two dictionaries
-            var swap = _knownEntities;
-            _knownEntities = _tempDictionary;
-            _tempDictionary = swap;
-
-            _tempDictionary.Clear();
-        }
-
-        private void RecordChange(FileSystemInfo fileInfo)
-        {
-            if (fileInfo == null ||
-                _changes.Contains(fileInfo.FullName) ||
-                fileInfo.FullName.Equals(_watchedDirectory.FullName, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _changes.Add(fileInfo.FullName);
-            if (fileInfo.FullName != _watchedDirectory.FullName)
-            {
-                var file = fileInfo as FileInfo;
-                if (file != null)
-                {
-                    RecordChange(file.Directory);
                 }
                 else
                 {
-                    var dir = fileInfo as DirectoryInfo;
-                    if (dir != null)
+                    // File added:
+                    RecordChange(newInfo);
+                }
+            }
+
+            // deleted files:
+            foreach (var (fullPath, oldInfo) in oldSnapshot)
+            {
+                if (newSnapshot.ContainsKey(fullPath))
+                {
+                    RecordChange(oldInfo);
+                }
+            }
+
+            void RecordChange(FileSystemInfo info)
+            {
+                if (info.FullName == _watchedDirectory.FullName)
+                {
+                    return;
+                }
+
+                if (!changes.Add(info.FullName))
+                {
+                    return;
+                }
+
+                FileSystemInfo? parentInfo;
+                try
+                {
+                    parentInfo = info switch
                     {
-                        RecordChange(dir.Parent);
+                        FileInfo { Directory: { } containingDirectory } => containingDirectory,
+                        DirectoryInfo { Parent: { } parentDirectory } => parentDirectory,
+                        _ => null
+                    };
+                }
+                catch
+                {
+                    parentInfo = null;
+                }
+
+                if (parentInfo != null)
+                {
+                    RecordChange(parentInfo);
+                }
+            }
+        }
+
+        private static ImmutableDictionary<string, FileSystemInfo> CreateDirectorySnapshot(DirectoryInfo watchedDirectory)
+        {
+            var snapshot = ImmutableDictionary.CreateBuilder<string, FileSystemInfo>();
+
+            try
+            {
+                if (watchedDirectory.Exists)
+                {
+                    foreach (var info in watchedDirectory.EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
+                    {
+                        // initialize last write timestamp:
+                        try
+                        {
+                            _ = info.LastWriteTimeUtc;
+
+                            // the enumerator does not guarantee unique paths
+                            snapshot.TryAdd(info.FullName, info);
+                        }
+                        catch (IOException)
+                        {
+                            // entry doesn't exist anymore
+                        }
                     }
                 }
             }
+            catch (Exception e) when (e is DirectoryNotFoundException or SecurityException or PlatformNotSupportedException)
+            {
+            }
+
+            return snapshot.ToImmutable();
         }
 
-        private void ForeachEntityInDirectory(DirectoryInfo dirInfo, Action<FileSystemInfo> fileAction)
+        private void NotifyChanges(IEnumerable<string> fullPaths)
         {
-            if (!dirInfo.Exists)
-            {
-                return;
-            }
-
-            IEnumerable<FileSystemInfo> entities;
-            try
-            {
-                entities = dirInfo.EnumerateFileSystemInfos("*.*");
-            }
-            // If the directory is deleted after the exists check this will throw and could crash the process
-            catch (DirectoryNotFoundException)
-            {
-                return;
-            }
-
-            foreach (var entity in entities)
-            {
-                fileAction(entity);
-
-                var subdirInfo = entity as DirectoryInfo;
-                if (subdirInfo != null)
-                {
-                    ForeachEntityInDirectory(subdirInfo, fileAction);
-                }
-            }
-        }
-
-        private void NotifyChanges()
-        {
-            foreach (var path in _changes)
+            foreach (var fullPath in fullPaths)
             {
                 if (_disposed || !_raiseEvents)
                 {
                     break;
                 }
 
-                if (OnFileChange != null)
-                {
-                    OnFileChange(this, (path, false));
-                }
+                OnFileChange?.Invoke(this, (fullPath, newFile: false));
             }
         }
 
@@ -237,19 +218,6 @@ namespace Microsoft.DotNet.Watcher.Internal
         {
             EnableRaisingEvents = false;
             _disposed = true;
-        }
-
-        private struct FileMeta
-        {
-            public FileMeta(FileSystemInfo fileInfo, bool foundAgain = false)
-            {
-                FileInfo = fileInfo;
-                FoundAgain = foundAgain;
-            }
-
-            public FileSystemInfo FileInfo;
-
-            public bool FoundAgain;
         }
     }
 }
