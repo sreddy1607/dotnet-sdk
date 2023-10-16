@@ -36,6 +36,7 @@ namespace Microsoft.DotNet.Cli.commands.package.search
         {
             var taskList = new List<(Task<IEnumerable<IPackageSearchMetadata>>, PackageSource)>();
             IList<PackageSource> listEndpoints = GetEndpointsAsync();
+            WarnForHTTPSources(listEndpoints);
             foreach (PackageSource source in listEndpoints)
             {
                 SourceRepository repository = Repository.Factory.GetCoreV3(source);
@@ -145,6 +146,43 @@ namespace Microsoft.DotNet.Cli.commands.package.search
             if (!Uri.TryCreate(source, UriKind.Absolute, out Uri result))
             {
                 throw new Exception("Invalid source " + source);
+            }
+        }
+
+
+        private void WarnForHTTPSources(IList<PackageSource> packageSources)
+        {
+            List<PackageSource> httpPackageSources = null;
+            foreach (PackageSource packageSource in packageSources)
+            {
+                if (packageSource.IsHttp && !packageSource.IsHttps && !packageSource.AllowInsecureConnections)
+                {
+                    if (httpPackageSources == null)
+                    {
+                        httpPackageSources = new();
+                    }
+                    httpPackageSources.Add(packageSource);
+                }
+            }
+
+            if (httpPackageSources != null && httpPackageSources.Count != 0)
+            {
+                if (httpPackageSources.Count == 1)
+                {
+                    Console.WriteLine(
+                        string.Format(CultureInfo.CurrentCulture,
+                        LocalizableStrings.Warning_HttpServerUsage,
+                        "search",
+                        httpPackageSources[0]));
+                }
+                else
+                {
+                    Console.WriteLine(
+                        string.Format(CultureInfo.CurrentCulture,
+                        LocalizableStrings.Warning_HttpServerUsage,
+                        "search",
+                        Environment.NewLine + string.Join(Environment.NewLine, httpPackageSources.Select(e => e.Name))));
+                }
             }
         }
     }

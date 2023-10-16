@@ -5,7 +5,7 @@ using Microsoft.DotNet.Cli.commands.package.search;
 
 namespace Microsoft.DotNet.Cli.Package.Tests
 {
-    public class NuGetSearchApiRequestTests
+    public class NuGetPackageSearchApiRequestTests
     {
         [Fact]
         public async Task NuGetSearchApiRequest_WithMockServerPackageExists_OutputOnePackage()
@@ -95,7 +95,7 @@ namespace Microsoft.DotNet.Cli.Package.Tests
             await request.ExecuteCommandAsync();
 
             // Assert
-            Assert.Equal(expectedResult, consoleOutput.ToString());
+            Assert.Contains(expectedResult, consoleOutput.ToString());
 
             //stop mock server
             mockServer.Stop();
