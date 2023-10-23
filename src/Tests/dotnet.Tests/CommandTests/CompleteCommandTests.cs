@@ -39,7 +39,6 @@ namespace Microsoft.DotNet.Tests.Commands
                 "new",
                 "nuget",
                 "pack",
-                "package",
                 "publish",
                 "remove",
                 "restore",
