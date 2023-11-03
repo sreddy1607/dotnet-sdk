@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- We don't want to run build server when not running as tests. -->
+    <UseRazorBuildServer>false</UseRazorBuildServer>
+    <StaticWebAssetRootPath>client</StaticWebAssetRootPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClassLibrary\ClassLibrary.csproj" />
+    <ProjectReference Include="..\AnotherClassLib\AnotherClassLib.csproj" />
+  </ItemGroup>
+</Project>

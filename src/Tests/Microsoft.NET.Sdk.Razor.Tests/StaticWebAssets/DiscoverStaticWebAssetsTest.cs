@@ -25,7 +25,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                 {
                     CreateCandidate(Path.Combine("wwwroot", "candidate.js"))
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -70,7 +70,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                 {
                     CreateCandidate(Path.Combine("wwwroot", "candidate.js"), relativePath: "subdir/candidate.js")
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -115,7 +115,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                 {
                     CreateCandidate(Path.Combine("wwwroot", "candidate.js"), targetPath: Path.Combine("wwwroot", "subdir", "candidate.publish.js"))
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -160,7 +160,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                 {
                     CreateCandidate(Path.Combine("wwwroot", "candidate.js"), link: Path.Combine("wwwroot", "subdir", "candidate.link.js"))
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -206,7 +206,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                     CreateCandidate(Path.Combine("wwwroot", "candidate.js"), copyToPublishDirectory: "Never"),
                     CreateCandidate(Path.Combine("wwwroot", "candidate.publish.js"), relativePath: "candidate.js")
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -266,7 +266,7 @@ namespace Microsoft.NET.Sdk.Razor.Tests
                         copyToOutputDirectory: copyToOutputDirectorySecond,
                         copyToPublishDirectory: copyToPublishDirectorySecond)
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = "_content/Path"
@@ -310,7 +310,7 @@ for path 'candidate.js'");
                 {
                     CreateCandidate("wwwroot\\candidate.js")
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = "wwwroot",
                 BasePath = givenPath
@@ -360,7 +360,7 @@ for path 'candidate.js'");
                 {
                     CreateCandidate("wwwroot\\candidate.js")
                 },
-                Pattern = "wwwroot\\**",
+                Patterns = new[] { new TaskItem("wwwroot\\**") },
                 SourceId = "MyProject",
                 ContentRoot = contentRoot,
                 BasePath = "base"

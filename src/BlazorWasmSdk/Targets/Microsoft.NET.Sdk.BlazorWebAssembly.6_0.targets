@@ -69,6 +69,7 @@ Copyright (c) .NET Foundation. All rights reserved.
   <!-- Wire-up static web assets -->
   <PropertyGroup>
     <ResolveStaticWebAssetsInputsDependsOn>
+      _EnsureStaticWebAssetRootPath;
       $(ResolveStaticWebAssetsInputsDependsOn);
       _ResolveBlazorWasmOutputs;
     </ResolveStaticWebAssetsInputsDependsOn>
@@ -87,6 +88,10 @@ Copyright (c) .NET Foundation. All rights reserved.
   <Import Project="Microsoft.NET.Sdk.BlazorWebAssembly.ServiceWorkerAssetsManifest.targets" Condition="'$(ServiceWorkerAssetsManifest)' != ''" />
 
   <Target Name="_BlazorWasmNativeForBuild" DependsOnTargets="_GatherBlazorFilesToBuild;WasmBuildApp" Condition="'$(UsingBrowserRuntimeWorkload)' == 'true'" />
+
+  <Target Name="_EnsureStaticWebAssetRootPath">
+    <Error Message="The 'StaticWebAssetRootPath' property can't be changed for Blazor WebAssembly project" Condition="'$(StaticWebAssetRootPath)' != 'wwwroot'" />
+  </Target>
 
   <Target Name="_GatherBlazorFilesToBuild">
     <ItemGroup>
