@@ -19,6 +19,32 @@ namespace Microsoft.NET.Publish.Tests
         {
         }
 
+        [Fact]
+        public void Can_Publish_SingleFile_And_NativeAot()
+        {
+            var targetFramework = ToolsetInfo.CurrentTargetFramework;
+            const string projectName = "SingleFileAndNativeAot";
+            var project = CreateHelloWorldTestProject(targetFramework, projectName, true);
+            project.AdditionalProperties["PublishSingleFile"] = "true";
+            project.AdditionalProperties["PublishAot"] = "true";
+            var testAsset = _testAssetsManager.CreateTestProject(project);
+
+            var publishCommand = new PublishCommand(testAsset);
+            publishCommand
+                .Execute("-p:UseCurrentRuntimeIdentifier=true")
+                .Should().Pass();
+
+            var buildProperties = project.GetPropertyValues(testAsset.TestRoot, targetFramework);
+            var rid = buildProperties["NETCoreSdkPortableRuntimeIdentifier"];
+
+            var publishDirectory = publishCommand.GetOutputDirectory(targetFramework, runtimeIdentifier: rid).FullName;
+            var publishedExe = Path.Combine(publishDirectory, $"{project.Name}{Constants.ExeSuffix}");
+
+            var command = new RunExeCommand(Log, publishedExe)
+                .Execute().Should().Pass()
+                .And.HaveStdOutContaining("Hello World");
+        }
+
         [RequiresMSBuildVersionTheory("17.8.0")]
         [MemberData(nameof(Net7Plus), MemberType = typeof(PublishTestUtils))]
         public void NativeAot_hw_runs_with_no_warnings_when_PublishAot_is_enabled(string targetFramework)
