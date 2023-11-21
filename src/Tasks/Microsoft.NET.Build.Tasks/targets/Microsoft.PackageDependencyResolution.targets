@@ -175,6 +175,8 @@ Copyright (c) .NET Foundation. All rights reserved.
            AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" />
   <UsingTask TaskName="Microsoft.NET.Build.Tasks.ResolvePackageAssets"
             AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" />
+  <UsingTask TaskName="Microsoft.NET.Build.Tasks.CheckRuntimeIdentifier"
+            AssemblyFile="$(MicrosoftNETBuildTasksAssembly)" />
   
   <!-- The condition on this target causes it to be skipped during design-time builds if
         the restore operation hasn't run yet.  This is to avoid displaying an error in
@@ -225,6 +227,19 @@ Copyright (c) .NET Foundation. All rights reserved.
       <CompilerApiVersion>roslyn$(_RoslynApiVersion)</CompilerApiVersion>
     </PropertyGroup>
     
+  </Target>
+
+  <!-- Throws an error when currently used runtime identifier is not present in project.assets.json. -->
+  <Target Name="CheckRuntimeIdentifier"
+          Condition="'$(DesignTimeBuild)' != 'true' And Exists('$(ProjectAssetsFile)') And '$(RuntimeIdentifier)' != '' And '$(DOTNET_CLI_DISABLE_RUNTIME_ASSETS_RESTORE_CHECK)'!='true'"
+          BeforeTargets="ResolvePackageAssets">
+
+    <CheckRuntimeIdentifier
+      TargetFramework="$(TargetFramework)"
+      ProjectAssetsFile="$(ProjectAssetsFile)"
+      RuntimeIdentifier="$(RuntimeIdentifier)">
+    </CheckRuntimeIdentifier>
+
   </Target>
 
   <Target Name="ResolvePackageAssets"
