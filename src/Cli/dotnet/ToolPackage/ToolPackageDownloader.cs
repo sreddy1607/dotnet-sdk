@@ -27,6 +27,8 @@ using NuGet.RuntimeModel;
 using NuGet.Versioning;
 using NuGet.Configuration;
 using Microsoft.TemplateEngine.Utils;
+using Newtonsoft.Json.Linq;
+using Microsoft.DotNet.NativeWrapper;
 
 namespace Microsoft.DotNet.Cli.ToolPackage
 {
@@ -158,10 +160,13 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                         toolReturnJsonParentDirectory = _localToolAssetDir;
                     }
 
-                    return new ToolPackageInstance(id: packageId,
+                    var toolPackageInstance = new ToolPackageInstance(id: packageId,
                                     version: packageVersion,
                                     packageDirectory: toolReturnPackageDirectory,
                                     assetsJsonParentDirectory: toolReturnJsonParentDirectory);
+
+                    ReadRuntimeConfig(toolPackageInstance);
+                    return toolPackageInstance;
                 },
                 rollback: () =>
                 {
@@ -176,6 +181,21 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                         Directory.Delete(packageRootDirectory.Value, false);
                     }
                 });
+        }
+
+        private static void ReadRuntimeConfig(
+            ToolPackageInstance toolPackageInstance
+            )
+        {
+            var executableFilePath = toolPackageInstance.Commands[0].Executable;
+            var runtimeConfigFilePath = Path.ChangeExtension(executableFilePath.ToString(), ".runtimeconfig.json");
+
+            // Update the runtimeconfig.json file
+            if (File.Exists(runtimeConfigFilePath))
+            {
+                var result = NETCoreSdkResolverNativeWrapper.InitializeForRuntimeConfig(runtimeConfigFilePath);
+                Console.WriteLine(result);
+            }
         }
 
         // The following methods are copied from the LockFileUtils class in Nuget.Client
