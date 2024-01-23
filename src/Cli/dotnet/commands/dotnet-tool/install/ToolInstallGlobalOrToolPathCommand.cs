@@ -138,7 +138,8 @@ namespace Microsoft.DotNet.Tools.Tool.Install
                         versionRange: versionRange,
                         targetFramework: _framework,
                         verbosity: _verbosity,
-                        isGlobalTool: true
+                        isGlobalTool: true,
+                        forceInstall: _forceInstall
                     );
 
                     EnsureVersionIsHigher(oldPackageNullable, newInstalledPackage, _allowPackageDowngrade);

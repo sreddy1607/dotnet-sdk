@@ -75,7 +75,8 @@ namespace Microsoft.DotNet.Cli.ToolPackage
             VerbosityOptions verbosity = VerbosityOptions.normal,
             VersionRange versionRange = null,
             string targetFramework = null,
-            bool isGlobalTool = false
+            bool isGlobalTool = false,
+            bool forceInstall = false
             )
         {
             var packageRootDirectory = _toolPackageStore.GetRootPackageDirectory(packageId);
