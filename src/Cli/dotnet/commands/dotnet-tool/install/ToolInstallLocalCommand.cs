@@ -21,6 +21,7 @@ namespace Microsoft.DotNet.Tools.Tool.Install
         private readonly IReporter _reporter;
         private readonly PackageId _packageId;
         private readonly bool _allowPackageDowngrade;
+        private readonly bool _forceInstall;
 
         private readonly string _explicitManifestFile;
         private readonly bool _createManifestIfNeeded;
@@ -48,6 +49,7 @@ namespace Microsoft.DotNet.Tools.Tool.Install
             _toolLocalPackageInstaller = new ToolInstallLocalInstaller(parseResult, toolPackageDownloader);
             _packageId = new PackageId(parseResult.GetValue(ToolUpdateCommandParser.PackageIdArgument));
             _allowPackageDowngrade = parseResult.GetValue(ToolInstallCommandParser.AllowPackageDowngradeOption);
+            _forceInstall = parseResult.GetValue(ToolInstallCommandParser.ForceInstallOption);
         }
         
 
