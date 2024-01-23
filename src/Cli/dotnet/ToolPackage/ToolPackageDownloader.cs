@@ -167,7 +167,11 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                                     packageDirectory: toolReturnPackageDirectory,
                                     assetsJsonParentDirectory: toolReturnJsonParentDirectory);
 
-                    ReadRuntimeConfig(toolPackageInstance, packageId);
+                    if(!forceInstall)
+                    {
+                        IsRuntimeConfigCompatible(toolPackageInstance, packageId);
+                    }
+
                     return toolPackageInstance;
                 },
                 rollback: () =>
@@ -185,7 +189,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                 });
         }
 
-        private static void ReadRuntimeConfig(
+        private static void IsRuntimeConfigCompatible(
             ToolPackageInstance toolPackageInstance,
             PackageId packageId
             )
