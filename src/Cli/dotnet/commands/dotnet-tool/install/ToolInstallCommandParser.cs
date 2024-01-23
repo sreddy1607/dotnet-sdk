@@ -92,6 +92,7 @@ namespace Microsoft.DotNet.Cli
             command.Options.Add(ArchitectureOption);
             command.Options.Add(CreateManifestIfNeededOption);
             command.Options.Add(AllowPackageDowngradeOption);
+            command.Options.Add(ForceInstallOption);
 
             command.SetAction((parseResult) => new ToolInstallCommand(parseResult).Execute());
 
