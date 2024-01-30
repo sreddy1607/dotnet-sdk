@@ -169,7 +169,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
 
                     if(!forceInstall)
                     {
-                        IsRuntimeConfigCompatible(toolPackageInstance, packageId);
+                        IsRuntimeConfigCompatible(toolPackageInstance, packageId, isGlobalTool);
                     }
 
                     return toolPackageInstance;
@@ -191,7 +191,8 @@ namespace Microsoft.DotNet.Cli.ToolPackage
 
         private static void IsRuntimeConfigCompatible(
             ToolPackageInstance toolPackageInstance,
-            PackageId packageId
+            PackageId packageId,
+            bool isGlobalTool
             )
         {
             var executableFilePath = toolPackageInstance.Commands[0].Executable;
@@ -210,12 +211,13 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                     tfmValue = tfmElement.GetString();
                 }
                 var result = NETCoreSdkResolverNativeWrapper.InitializeForRuntimeConfig(runtimeConfigFilePath);
-                RuntimeConfigDetectionMessage(result, packageId, tfmValue);
+                RuntimeConfigDetectionMessage(result, packageId, tfmValue, isGlobalTool);
             }
         }
 
-        private static void RuntimeConfigDetectionMessage(int result, PackageId packageId, string tfmValue = "")
+        private static void RuntimeConfigDetectionMessage(int result, PackageId packageId, string tfmValue = "", bool isGlobalTool = false)
         {
+            var global = isGlobalTool ? " -g" : "";
             switch(result)
             {
                 // RuntimeConfigDetectionResult::Success
@@ -225,12 +227,12 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                     break;
 
                 // RuntimeConfigDetectionResult incompatible
-                // TBD: if include -g in sample command; which version should be included in the install; --force?
+                // TBD: which version should be included in the install; --force?
                 default:
                     throw new GracefulException(
                             string.Format(
                             CommonLocalizableStrings.ToolPackageRuntimeConfigIncompatible,
-                            packageId, tfmValue));
+                            packageId, tfmValue, global));
             }
         }
 
