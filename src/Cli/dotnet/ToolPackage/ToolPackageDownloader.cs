@@ -208,14 +208,15 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                 if (rootElement.TryGetProperty("runtimeOptions", out JsonElement runtimeOptionsElement) &&
                 runtimeOptionsElement.TryGetProperty("tfm", out JsonElement tfmElement))
                 {
-                    tfmValue = tfmElement.GetString();
+                    tfmValue = new string(tfmElement.GetString().Where(c => char.IsDigit(c) || c == '.').ToArray());
                 }
+                var tfmStr = double.TryParse(tfmValue, out double tfmDouble) ? tfmDouble.ToString() : "";
                 var result = NETCoreSdkResolverNativeWrapper.InitializeForRuntimeConfig(runtimeConfigFilePath);
                 RuntimeConfigDetectionMessage(result, packageId, tfmValue, isGlobalTool);
             }
         }
 
-        private static void RuntimeConfigDetectionMessage(int result, PackageId packageId, string tfmValue = "", bool isGlobalTool = false)
+        private static void RuntimeConfigDetectionMessage(int result, PackageId packageId, string tfmStr = "", bool isGlobalTool = false)
         {
             var global = isGlobalTool ? " -g" : "";
             switch(result)
@@ -232,7 +233,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                     throw new GracefulException(
                             string.Format(
                             CommonLocalizableStrings.ToolPackageRuntimeConfigIncompatible,
-                            packageId, tfmValue, global));
+                            packageId, tfmStr, global));
             }
         }
 
