@@ -315,6 +315,11 @@ https://aka.ms/dotnet/download/sdk
 
 dotnet tool install {0}{2} --force 
 </target>
+       <note />
+      </trans-unit>
+      <trans-unit id="ToolSettingsNotFound">
+        <source>Tool settings file does not exist for the tool {0}.</source>
+        <target state="new">Tool settings file does not exist for the tool {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="Update">

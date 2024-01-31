@@ -751,4 +751,7 @@ https://aka.ms/dotnet/download/sdk
 dotnet tool install {0}{2} --force 
 </value>
   </data>
+  <data name="ToolSettingsNotFound" xml:space="preserve">
+    <value>Tool settings file does not exist for the tool {0}.</value>
+  </data>
 </root>

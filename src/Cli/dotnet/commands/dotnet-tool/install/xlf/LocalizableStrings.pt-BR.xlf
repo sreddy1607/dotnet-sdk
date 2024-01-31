@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AllowPackageDowngradeOptionDescription">
         <source>Allow package downgrade when installing a .NET tool package.</source>
-        <target state="new">Allow package downgrade when installing a .NET tool package.</target>
+        <target state="translated">Permitir downgrade de pacote ao instalar um pacote de ferramentas do .NET.</target>
         <note />
       </trans-unit>
       <trans-unit id="CreateManifestIfNeededOptionDescription">
@@ -91,6 +91,11 @@ Se quiser criar um manifesto, use `dotnet new tool-manifest`, normalmente no dir
       <trans-unit id="PrereleaseAndVersionAreNotSupportedAtTheSameTime">
         <source>The --prerelease and --version options are not supported in the same command</source>
         <target state="translated">Não há suporte para as opções --prerelease e --version no mesmo comando.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RollForwardOptionDescription">
+        <source>Allow a .NET tool to roll forward to newer versions of the .NET runtime if the runtime it targets isn't installed.</source>
+        <target state="new">Allow a .NET tool to roll forward to newer versions of the .NET runtime if the runtime it targets isn't installed.</target>
         <note />
       </trans-unit>
       <trans-unit id="VersionOptionDescription">

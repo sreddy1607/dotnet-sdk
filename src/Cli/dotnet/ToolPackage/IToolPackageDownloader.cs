@@ -15,6 +15,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
             string targetFramework = null,
             bool isGlobalTool = false,
             bool forceInstall = false
+            bool isGlobalToolRollForward = false
         );
     }
 }

@@ -30,6 +30,8 @@ using Microsoft.TemplateEngine.Utils;
 using Newtonsoft.Json.Linq;
 using Microsoft.DotNet.NativeWrapper;
 using System.Text.Json;
+using System.Xml;
+using System.Text.Json.Nodes;
 
 namespace Microsoft.DotNet.Cli.ToolPackage
 {
@@ -77,6 +79,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
             string targetFramework = null,
             bool isGlobalTool = false,
             bool forceInstall = false
+            bool isGlobalToolRollForward = false
             )
         {
             var packageRootDirectory = _toolPackageStore.GetRootPackageDirectory(packageId);
@@ -143,7 +146,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                     }
                                        
                     CreateAssetFile(packageId, packageVersion, toolDownloadDir, assetFileDirectory, _runtimeJsonPath, targetFramework);
-
+                    
                     DirectoryPath toolReturnPackageDirectory;
                     DirectoryPath toolReturnJsonParentDirectory;
 
@@ -167,9 +170,13 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                                     packageDirectory: toolReturnPackageDirectory,
                                     assetsJsonParentDirectory: toolReturnJsonParentDirectory);
 
-                    if(!forceInstall)
+                    if(!forceInstall && !isGlobalToolRollForward)
                     {
                         IsRuntimeConfigCompatible(toolPackageInstance, packageId, isGlobalTool);
+                        
+                    if (isGlobalToolRollForward)
+                    {
+                        UpdateRuntimeConfig(toolPackageInstance);
                     }
 
                     return toolPackageInstance;
@@ -249,6 +256,31 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                 managedCodeConventions.Patterns.ToolsAssemblies);
 
             lockFileLib.ToolsAssemblies.AddRange(toolsGroup);
+        }
+
+        private static void UpdateRuntimeConfig(
+            ToolPackageInstance toolPackageInstance
+            )
+        {
+            foreach (var command in toolPackageInstance.Commands)
+            {
+                var runtimeConfigFilePath = Path.ChangeExtension(command.Executable.Value, ".runtimeconfig.json");
+
+                // Update the runtimeconfig.json file
+                if (File.Exists(runtimeConfigFilePath))
+                {
+                    string existingJson = File.ReadAllText(runtimeConfigFilePath);
+
+                    var jsonObject = JObject.Parse(existingJson);
+                    var runtimeOptions = jsonObject["runtimeOptions"] as JObject;
+                    if (runtimeOptions != null)
+                    {
+                        runtimeOptions["rollForward"] = "Major";
+                        string updateJson = jsonObject.ToString();
+                        File.WriteAllText(runtimeConfigFilePath, updateJson);
+                    }
+                }
+            }
         }
 
         private static IEnumerable<LockFileItem> GetLockFileItems(

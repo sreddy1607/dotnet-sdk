@@ -98,6 +98,7 @@ namespace Microsoft.DotNet.Tools.Tests.ComponentMocks
             string targetFramework = null,
             bool isGlobalTool = false,
             bool forceInstall = false
+            bool isGlobalToolRollForward = false
             )
         {
             string rollbackDirectory = null;
