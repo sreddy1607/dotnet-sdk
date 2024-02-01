@@ -144,7 +144,7 @@ namespace Microsoft.DotNet.Tools.Tool.Install
                         targetFramework: _framework,
                         verbosity: _verbosity,
                         isGlobalTool: true,
-                        forceInstall: _forceInstall
+                        forceInstall: _forceInstall,
                         isGlobalToolRollForward: _allowRollForward
                     );
 
