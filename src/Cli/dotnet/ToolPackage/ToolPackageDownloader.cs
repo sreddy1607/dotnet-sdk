@@ -235,7 +235,6 @@ namespace Microsoft.DotNet.Cli.ToolPackage
                     break;
 
                 // RuntimeConfigDetectionResult incompatible
-                // TBD: ensure the latest
                 default:
                     throw new GracefulException(
                             string.Format(
