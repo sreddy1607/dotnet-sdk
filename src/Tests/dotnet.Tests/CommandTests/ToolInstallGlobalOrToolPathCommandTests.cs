@@ -72,7 +72,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
             _createToolPackageStoreDownloaderUninstaller = (location, forwardArguments) => (_toolPackageStore, _toolPackageStoreQuery, CreateToolPackageDownloader(), _toolPackageUninstallerMock);
 
 
-            _parseResult = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --verbosity minimal");
+            _parseResult = Parser.Instance.Parse($"dotnet tool install -g {PackageId}");
         }
 
         [Fact]
@@ -342,7 +342,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         [Fact]
         public void WhenRunWithExactVersionItShouldSucceed()
         {
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion} --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -366,7 +366,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         [Fact]
         public void WhenInstallTheSameVersionTwiceItShouldSucceed()
         {
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion} --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -402,7 +402,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         public void WhenInstallWithHigherVersionItShouldUpdate()
         {
             IToolPackageDownloader toolToolPackageDownloader = GetToolPackageDownloaderWithHigherVersionInFeed();
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion} --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -423,7 +423,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
                     PackageVersion).Green());
             _reporter.Clear();
 
-            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {HigherPackageVersion} --verbosity minimal");
+            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {HigherPackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand2 = new ToolInstallGlobalOrToolPathCommand(
                 result2,
@@ -448,7 +448,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         public void WhenInstallWithLowerVersionWithAllowDowngradeOptionItShouldDowngrade()
         {
             IToolPackageDownloader toolToolPackageDownloader = GetToolPackageDownloaderWithLowerVersionInFeed();
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion} --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -469,7 +469,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
                     PackageVersion).Green());
             _reporter.Clear();
 
-            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {LowerPackageVersion} --verbosity minimal --allow-downgrade");
+            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {LowerPackageVersion} --allow-downgrade");
 
             var toolInstallGlobalOrToolPathCommand2 = new ToolInstallGlobalOrToolPathCommand(
                 result2,
@@ -494,7 +494,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         public void WhenInstallWithLowerVersionItShouldFail()
         {
             IToolPackageDownloader toolToolPackageDownloader = GetToolPackageDownloaderWithLowerVersionInFeed();
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion} --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {PackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -515,7 +515,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
                     PackageVersion).Green());
             _reporter.Clear();
 
-            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {LowerPackageVersion} --verbosity minimal");
+            ParseResult result2 = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version {LowerPackageVersion}");
 
             var toolInstallGlobalOrToolPathCommand2 = new ToolInstallGlobalOrToolPathCommand(
                 result2,
@@ -531,7 +531,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         [Fact]
         public void WhenRunWithValidVersionRangeItShouldSucceed()
         {
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version [1.0,2.0] --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version [1.0,2.0]");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -632,7 +632,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         {
             IToolPackageDownloader toolToolPackageDownloader = GetToolToolPackageDownloaderWithPreviewInFeed();
 
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --prerelease --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --prerelease");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,
@@ -780,7 +780,7 @@ namespace Microsoft.DotNet.Tests.Commands.Tool
         [Fact]
         public void WhenRunWithValidVersionWildcardItShouldSucceed()
         {
-            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version 1.0.* --verbosity minimal");
+            ParseResult result = Parser.Instance.Parse($"dotnet tool install -g {PackageId} --version 1.0.*");
 
             var toolInstallGlobalOrToolPathCommand = new ToolInstallGlobalOrToolPathCommand(
                 result,

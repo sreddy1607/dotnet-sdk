@@ -65,7 +65,7 @@ namespace Microsoft.DotNet.Tools.Tool.Install
             _framework = parseResult.GetValue(ToolInstallCommandParser.FrameworkOption);
             _source = parseResult.GetValue(ToolInstallCommandParser.AddSourceOption);
             _global = parseResult.GetValue(ToolAppliedOption.GlobalOption);
-            _verbosity = parseResult.GetValue(ToolInstallCommandParser.VerbosityOption);
+            _verbosity = GetValueOrDefault(ToolInstallCommandParser.VerbosityOption, VerbosityOptions.minimal, parseResult);
             _toolPath = parseResult.GetValue(ToolAppliedOption.ToolPathOption);
             _architectureOption = parseResult.GetValue(ToolInstallCommandParser.ArchitectureOption);
 
@@ -94,6 +94,17 @@ namespace Microsoft.DotNet.Tools.Tool.Install
 
             _reporter = (reporter ?? Reporter.Output);
             _errorReporter = (reporter ?? Reporter.Error);
+        }
+
+        public T GetValueOrDefault<T>(CliOption<T> option, T defaultOption, ParseResult parseResult)
+        {
+            if (parseResult.GetResult(option) is { } result &&
+                result.GetValueOrDefault<T>() is { } t)
+            {
+                return t;
+            }
+
+            return defaultOption;
         }
 
         public override int Execute()
