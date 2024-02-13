@@ -136,11 +136,18 @@ namespace Microsoft.DotNet.Cli.NuGetPackageDownloader
             return nupkgPath;
         }
 
+        private bool verbosityGreaterThanMinimal()
+        {
+            return _verbosityOptions != VerbosityOptions.quiet && _verbosityOptions != VerbosityOptions.q
+                && _verbosityOptions != VerbosityOptions.minimal && _verbosityOptions != VerbosityOptions.m;
+        }
+
         private void VerifySigning(string nupkgPath)
         {
             if (!_verifySignatures && !_validationMessagesDisplayed)
             {
                 if (!(_verbosityOptions.IsQuiet() || _verbosityOptions.IsMinimal()))
+
                 {
                     _reporter.WriteLine(LocalizableStrings.NuGetPackageSignatureVerificationSkipped);
                 }
