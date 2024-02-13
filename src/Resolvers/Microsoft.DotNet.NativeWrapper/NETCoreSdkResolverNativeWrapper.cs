@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 
 //only Microsoft.DotNet.NativeWrapper (net7.0) has nullables disabled
 #pragma warning disable IDE0240 // Remove redundant nullable directive
@@ -57,7 +58,13 @@ namespace Microsoft.DotNet.NativeWrapper
 
         }
 
-        public static int InitializeForRuntimeConfig(string runtimeConfigPath)
+        public enum InitializationRuntimeConfigResult
+        {
+            Success,
+            RuntimeConfigNotFound,
+        }
+
+        public static InitializationRuntimeConfigResult InitializeForRuntimeConfig(string runtimeConfigPath)
         {
             var result = -1;
             IntPtr hostContextHandle = default;
@@ -75,7 +82,15 @@ namespace Microsoft.DotNet.NativeWrapper
             }
 
             Marshal.FreeHGlobal(parametersPtr);
-            return result;
+            switch (result)
+            {
+                case 0:
+                case 1:
+                case 2:
+                    return InitializationRuntimeConfigResult.Success;
+                default:
+                    return InitializationRuntimeConfigResult.RuntimeConfigNotFound;
+            }
         }
     }
 }
