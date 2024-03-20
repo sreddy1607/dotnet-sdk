@@ -182,7 +182,11 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
             }
         }
 
-        public IEnumerable<ReadableWorkloadManifest> GetManifests()
+        // The useInstallStateOnly flag indicates that, when performing garbage collection, we should not follow the normal logic of
+        // starting at manifest roots and following them to complete the closure. This means that the install state file has already
+        // been overwritten with exactly the set of manifests we want, and we want to keep only manifests in that list. Note that we
+        // keep the baseline manifests regardless.
+        public IEnumerable<ReadableWorkloadManifest> GetManifests(bool useInstallStateOnly = false)
         {
             //  Scan manifest directories
             var manifestIdsToManifests = new Dictionary<string, ReadableWorkloadManifest>(StringComparer.OrdinalIgnoreCase);
@@ -212,37 +216,40 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
                 }
             }
 
-            if (_manifestRoots.Length == 1)
+            if (!useInstallStateOnly)
             {
-                //  Optimization for common case where test hook to add additional directories isn't being used
-                var manifestVersionBandDirectory = Path.Combine(_manifestRoots[0], _sdkVersionBand.ToString());
-                if (Directory.Exists(manifestVersionBandDirectory))
+                if (_manifestRoots.Length == 1)
                 {
-                    foreach (var workloadManifestDirectory in Directory.EnumerateDirectories(manifestVersionBandDirectory))
-                    {
-                        ProbeDirectory(workloadManifestDirectory, _sdkVersionBand.ToString());
-                    }
-                }
-            }
-            else
-            {
-                //  If the same folder name is in multiple of the workload manifest directories, take the first one
-                Dictionary<string, string> directoriesWithManifests = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var manifestRoot in _manifestRoots.Reverse())
-                {
-                    var manifestVersionBandDirectory = Path.Combine(manifestRoot, _sdkVersionBand.ToString());
+                    //  Optimization for common case where test hook to add additional directories isn't being used
+                    var manifestVersionBandDirectory = Path.Combine(_manifestRoots[0], _sdkVersionBand.ToString());
                     if (Directory.Exists(manifestVersionBandDirectory))
                     {
                         foreach (var workloadManifestDirectory in Directory.EnumerateDirectories(manifestVersionBandDirectory))
                         {
-                            directoriesWithManifests[Path.GetFileName(workloadManifestDirectory)] = workloadManifestDirectory;
+                            ProbeDirectory(workloadManifestDirectory, _sdkVersionBand.ToString());
                         }
                     }
                 }
-
-                foreach (var workloadManifestDirectory in directoriesWithManifests.Values)
+                else
                 {
-                    ProbeDirectory(workloadManifestDirectory, _sdkVersionBand.ToString());
+                    //  If the same folder name is in multiple of the workload manifest directories, take the first one
+                    Dictionary<string, string> directoriesWithManifests = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var manifestRoot in _manifestRoots.Reverse())
+                    {
+                        var manifestVersionBandDirectory = Path.Combine(manifestRoot, _sdkVersionBand.ToString());
+                        if (Directory.Exists(manifestVersionBandDirectory))
+                        {
+                            foreach (var workloadManifestDirectory in Directory.EnumerateDirectories(manifestVersionBandDirectory))
+                            {
+                                directoriesWithManifests[Path.GetFileName(workloadManifestDirectory)] = workloadManifestDirectory;
+                            }
+                        }
+                    }
+
+                    foreach (var workloadManifestDirectory in directoriesWithManifests.Values)
+                    {
+                        ProbeDirectory(workloadManifestDirectory, _sdkVersionBand.ToString());
+                    }
                 }
             }
 
@@ -277,15 +284,18 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
                 }
             }
 
-            if (_knownManifestIdsAndOrder != null && _knownManifestIdsAndOrder.Keys.Any(id => !manifestIdsToManifests.ContainsKey(id)))
+            if (!useInstallStateOnly)
             {
-                var missingManifestIds = _knownManifestIdsAndOrder.Keys.Where(id => !manifestIdsToManifests.ContainsKey(id));
-                foreach (var missingManifestId in missingManifestIds)
+                if (_knownManifestIdsAndOrder != null && _knownManifestIdsAndOrder.Keys.Any(id => !manifestIdsToManifests.ContainsKey(id)))
                 {
-                    var (manifestDir, featureBand) = FallbackForMissingManifest(missingManifestId);
-                    if (!string.IsNullOrEmpty(manifestDir))
+                    var missingManifestIds = _knownManifestIdsAndOrder.Keys.Where(id => !manifestIdsToManifests.ContainsKey(id));
+                    foreach (var missingManifestId in missingManifestIds)
                     {
-                        AddManifest(missingManifestId, manifestDir, featureBand, Path.GetFileName(manifestDir));
+                        var (manifestDir, featureBand) = FallbackForMissingManifest(missingManifestId);
+                        if (!string.IsNullOrEmpty(manifestDir))
+                        {
+                            AddManifest(missingManifestId, manifestDir, featureBand, Path.GetFileName(manifestDir));
+                        }
                     }
                 }
             }

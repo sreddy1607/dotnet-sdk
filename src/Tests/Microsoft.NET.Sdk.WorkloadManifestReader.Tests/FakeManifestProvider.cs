@@ -22,7 +22,7 @@ namespace ManifestReaderTests
 
         public void RefreshWorkloadManifests() { }
 
-        public IEnumerable<ReadableWorkloadManifest> GetManifests()
+        public IEnumerable<ReadableWorkloadManifest> GetManifests(bool useInstallStateOnly)
         {
             foreach (var filePath in _filePaths)
             {
@@ -51,7 +51,7 @@ namespace ManifestReaderTests
 
         public void RefreshWorkloadManifests() { }
 
-        public IEnumerable<ReadableWorkloadManifest> GetManifests()
+        public IEnumerable<ReadableWorkloadManifest> GetManifests(bool useInstallStateOnly)
             => _manifests.Select(m => new ReadableWorkloadManifest(
                 m.id,
                 $@"C:\fake\{m.id}",

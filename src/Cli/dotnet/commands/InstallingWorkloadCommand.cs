@@ -34,6 +34,8 @@ namespace Microsoft.DotNet.Workloads.Workload
         protected readonly SdkFeatureBand _sdkFeatureBand;
         protected readonly ReleaseVersion _targetSdkVersion;
         protected readonly string _fromRollbackDefinition;
+        protected readonly string _fromHistorySpecified;
+        protected readonly bool _historyManifestOnlyOption;
         protected string _workloadSetVersion;
         protected readonly PackageSourceLocation _packageSourceLocation;
         protected readonly IWorkloadResolverFactory _workloadResolverFactory;
@@ -59,6 +61,8 @@ namespace Microsoft.DotNet.Workloads.Workload
             _downloadToCacheOption = parseResult.GetValue(InstallingWorkloadCommandParser.DownloadToCacheOption);
 
             _fromRollbackDefinition = parseResult.GetValue(InstallingWorkloadCommandParser.FromRollbackFileOption);
+            _fromHistorySpecified = parseResult.GetValue(InstallingWorkloadCommandParser.FromHistoryOption);
+            _historyManifestOnlyOption = !string.IsNullOrEmpty(parseResult.GetValue(InstallingWorkloadCommandParser.HistoryManifestOnlyOption));
             var configOption = parseResult.GetValue(InstallingWorkloadCommandParser.ConfigOption);
             var sourceOption = parseResult.GetValue(InstallingWorkloadCommandParser.SourceOption);
             _packageSourceLocation = string.IsNullOrEmpty(configOption) && (sourceOption == null || !sourceOption.Any()) ? null :
@@ -104,7 +108,7 @@ namespace Microsoft.DotNet.Workloads.Workload
             return installStateContents.UseWorkloadSets ?? false;
         }
 
-        protected IEnumerable<ManifestVersionUpdate> HandleWorkloadUpdateFromVersion(ITransactionContext context, DirectoryPath? offlineCache)
+        protected IEnumerable<ManifestVersionUpdate> HandleWorkloadUpdateFromVersion(ITransactionContext context, DirectoryPath? offlineCache, WorkloadHistoryRecorder recorder = null)
         {
             // Ensure workload set mode is set to 'workloadset'
             // Do not skip checking the mode first, as setting it triggers
@@ -115,10 +119,10 @@ namespace Microsoft.DotNet.Workloads.Workload
             }
 
             _workloadManifestUpdater.DownloadWorkloadSet(_workloadSetVersion, offlineCache);
-            return InstallWorkloadSet(context);
+            return InstallWorkloadSet(context, recorder);
         }
 
-        public IEnumerable<ManifestVersionUpdate> InstallWorkloadSet(ITransactionContext context)
+        public IEnumerable<ManifestVersionUpdate> InstallWorkloadSet(ITransactionContext context, WorkloadHistoryRecorder recorder = null)
         {
             var advertisingPackagePath = Path.Combine(_userProfileDir, "sdk-advertising", _sdkFeatureBand.ToString(), "microsoft.net.workloads");
             if (File.Exists(Path.Combine(advertisingPackagePath, Constants.workloadSetVersionFileName)))
@@ -128,7 +132,7 @@ namespace Microsoft.DotNet.Workloads.Workload
             }
             var workloadSetPath = _workloadInstaller.InstallWorkloadSet(context, advertisingPackagePath);
             var files = Directory.EnumerateFiles(workloadSetPath, "*.workloadset.json");
-            return _workloadManifestUpdater.ParseRollbackDefinitionFiles(files);
+            return _workloadManifestUpdater.ParseRollbackDefinitionFiles(files, recorder);
         }
 
         private void PrintWorkloadSetTransition(string newVersion)
@@ -220,6 +224,11 @@ namespace Microsoft.DotNet.Workloads.Workload
             return ret;
         }
 
+        protected void PrintDownloadLink(IEnumerable<string> packageUrls)
+        {
+            Reporter.WriteLine(JsonSerializer.Serialize(packageUrls, new JsonSerializerOptions() { WriteIndented = true }));
+        }
+
         protected IEnumerable<WorkloadId> GetInstalledWorkloads(bool fromPreviousSdk)
         {
             if (fromPreviousSdk)
@@ -294,6 +303,16 @@ namespace Microsoft.DotNet.Workloads.Workload
             Hidden = true
         };
 
+        public static readonly CliOption<string> FromHistoryOption = new("--from-history")
+        {
+            Description = Update.LocalizableStrings.FromHistoryOptionDescription
+        };
+
+        public static readonly CliOption<string> HistoryManifestOnlyOption = new("--manifests-only")
+        {
+            Description = Update.LocalizableStrings.HistoryManifestOnlyOptionDescription
+        };
+
         public static readonly CliOption<string> ConfigOption = new("--configfile")
         {
             Description = Strings.ConfigFileOptionDescription,
@@ -316,6 +335,8 @@ namespace Microsoft.DotNet.Workloads.Workload
             command.Options.Add(DownloadToCacheOption);
             command.Options.Add(IncludePreviewOption);
             command.Options.Add(FromRollbackFileOption);
+            command.Options.Add(FromHistoryOption);
+            command.Options.Add(HistoryManifestOnlyOption);
         }
     }
 }
