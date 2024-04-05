@@ -213,6 +213,22 @@ namespace Microsoft.DotNet.MsiInstallerTests
             GetWorkloadVersion().Should().Be(workloadVersionBeforeUpdate);
         }
 
+        [Fact]
+        public void WorkloadSetInstallationRecordIsWrittenCorrectly()
+        {
+            //  Should the workload set version or the package version be used in the registry?
+            throw new NotImplementedException();
+        }
+
+        [Fact]
+        public void TurnOffWorkloadSetUpdateMode()
+        {
+            //  If you have a workload set installed and then turn off workload set update mode, what should happen?
+            //  - Update should update individual manifests
+            //  - Resolver should ignore workload sets that are installed
+            throw new NotImplementedException();
+        }
+
         string GetUpdateMode()
         {
             var result = VM.CreateRunCommand("dotnet", "workload", "config", "--update-mode")
