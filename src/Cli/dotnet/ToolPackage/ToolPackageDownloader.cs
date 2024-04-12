@@ -77,7 +77,8 @@ namespace Microsoft.DotNet.Cli.ToolPackage
             VersionRange versionRange = null,
             string targetFramework = null,
             bool isGlobalTool = false,
-            bool isGlobalToolRollForward = false
+            bool isGlobalToolRollForward = false,
+            bool verifySigning = true
             )
         {
             var packageRootDirectory = _toolPackageStore.GetRootPackageDirectory(packageId);
@@ -133,7 +134,7 @@ namespace Microsoft.DotNet.Cli.ToolPackage
 
                     if (package == null)
                     {
-                        DownloadAndExtractPackage(packageLocation, packageId, nugetPackageDownloader, toolDownloadDir.Value, _toolPackageStore, packageVersion, packageSourceLocation, includeUnlisted: givenSpecificVersion).GetAwaiter().GetResult();
+                        DownloadAndExtractPackage(packageLocation, packageId, nugetPackageDownloader, toolDownloadDir.Value, _toolPackageStore, packageVersion, packageSourceLocation, includeUnlisted: givenSpecificVersion, verifySigning: verifySigning).GetAwaiter().GetResult();
                     }
                     else if(isGlobalTool)
                     {
@@ -286,10 +287,11 @@ namespace Microsoft.DotNet.Cli.ToolPackage
             IToolPackageStore toolPackageStore,
             NuGetVersion packageVersion,
             PackageSourceLocation packageSourceLocation,
+            bool verifySigning,
             bool includeUnlisted = false
             )
         {
-            var packagePath = await nugetPackageDownloader.DownloadPackageAsync(packageId, packageVersion, packageSourceLocation, includeUnlisted: includeUnlisted).ConfigureAwait(false);
+            var packagePath = await nugetPackageDownloader.DownloadPackageAsync(packageId, packageVersion, packageSourceLocation, includeUnlisted: includeUnlisted, verifySigning: verifySigning).ConfigureAwait(false);
 
             // look for package on disk and read the version
             NuGetVersion version;
