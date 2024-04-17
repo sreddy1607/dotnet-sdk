@@ -43,7 +43,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                     versionRange: VersionRange.Parse(TestPackageVersion),
                     packageLocation: new PackageLocation(nugetConfig: nugetConfigPath),
                     targetFramework: _testTargetframework,
-                    verifySigning: false);
+                    verifySignatures: false);
 
                 var commands = toolPackage.Commands;
                 var expectedPackagesFolder = NuGetGlobalPackagesFolder.GetLocation();
@@ -82,7 +82,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse("1.0.0-*"),
                 packageLocation: new PackageLocation(nugetConfig: nugetConfigPath),
                 targetFramework: _testTargetframework,
-                verifySigning: false);
+                verifySignatures: false);
 
             var expectedPackagesFolder = NuGetGlobalPackagesFolder.GetLocation();
 
