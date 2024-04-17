@@ -55,7 +55,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -84,7 +84,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                     versionRange: VersionRange.Parse(TestPackageVersion),
                     targetFramework: _testTargetframework,
                     isGlobalTool: true,
-                    verifySigning: false);
+                    verifySignatures: false);
 
                 transactionScope.Complete();
             }
@@ -111,7 +111,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -175,7 +175,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -199,7 +199,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 verbosity: TestVerbosity,
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -222,7 +222,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 verbosity: TestVerbosity,
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -246,7 +246,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -271,7 +271,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -295,7 +295,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -322,7 +322,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -354,7 +354,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
                         isGlobalTool: true,
-                        verifySigning: false);
+                        verifySignatures: false);
 
                     FailedStepAfterSuccessRestore();
                     t.Complete();
@@ -389,7 +389,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
                         isGlobalTool: true,
-                        verifySigning: false);
+                        verifySignatures: false);
 
                     first.Should().NotThrow();
 
@@ -399,7 +399,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
                         isGlobalTool: true,
-                        verifySigning: false);
+                        verifySignatures: false);
 
                     t.Complete();
                 }
@@ -441,7 +441,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         verbosity: TestVerbosity,
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
-                        verifySigning: false);
+                        verifySignatures: false);
 
                     fileSystem
                     .Directory
@@ -492,7 +492,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         verbosity: TestVerbosity,
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
-                        verifySigning: false);
+                        verifySignatures: false);
 
 
                     downloader.InstallPackage(new PackageLocation(additionalFeeds: new[] { source }),
@@ -500,7 +500,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                         verbosity: TestVerbosity,
                         versionRange: VersionRange.Parse(TestPackageVersion),
                         targetFramework: _testTargetframework,
-                        verifySigning: false);
+                        verifySignatures: false);
 
                     t.Complete();
                 }
@@ -524,7 +524,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -534,7 +534,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             reporter.Lines.Should().BeEmpty();
 
@@ -578,7 +578,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -605,7 +605,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -641,7 +641,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -672,7 +672,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 verbosity: TestVerbosity,
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 
@@ -705,7 +705,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse(TestPackageVersion),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, store);
 
@@ -733,7 +733,7 @@ namespace Microsoft.DotNet.PackageInstall.Tests
                 versionRange: VersionRange.Parse("1.0.0-rc*"),
                 targetFramework: _testTargetframework,
                 isGlobalTool: true,
-                verifySigning: false);
+                verifySignatures: false);
 
             AssertPackageInstall(reporter, fileSystem, package, store, storeQuery);
 

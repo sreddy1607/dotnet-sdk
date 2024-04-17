@@ -24,7 +24,7 @@ namespace Microsoft.DotNet.Cli.NuGetPackageDownloader
             bool includeUnlisted = false,
             DirectoryPath? downloadFolder = null,
             PackageSourceMapping packageSourceMapping = null,
-            bool verifySigning = false)
+            bool verifySignatures = false)
         {
             var mockPackagePath = Path.Combine(MockPackageDir, $"{packageId}.{packageVersion}.nupkg");
             File.WriteAllText(mockPackagePath, string.Empty);
