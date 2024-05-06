@@ -40,7 +40,6 @@
         Condition="'$([MSBuild]::GetTargetFrameworkIdentifier($(TargetFramework)))' == '.NETCoreApp'"
         GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" />
-    <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonPackageVersion)" />
     <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="NuGet.Packaging" />
     <!-- nuget moved all type from NuGet.Packaging.Core to NuGet.Packaging and added type forwarding in 5.0.0-rtm.5821.
@@ -52,6 +51,7 @@
     <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonPackageVersion)" Condition="'$(TargetFramework)' == 'net472'"/>
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
