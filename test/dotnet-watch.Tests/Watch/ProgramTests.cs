@@ -24,7 +24,7 @@ namespace Microsoft.DotNet.Watcher.Tests
 
             var reporter = new ConsoleReporter(console, verbose: true, quiet: false, suppressEmojis: false);
             var options = CommandLineOptions.Parse(["run"], reporter, console.Out, out var _);
-            var app = new Program(console, reporter, options, new EnvironmentOptions(WorkingDirectory: testAsset, MuxerPath: ""));
+            var app = new Program(console, reporter, TestOptions.ProjectOptions, options, new EnvironmentOptions(WorkingDirectory: testAsset, MuxerPath: ""));
 
             var run = app.RunAsync();
 
