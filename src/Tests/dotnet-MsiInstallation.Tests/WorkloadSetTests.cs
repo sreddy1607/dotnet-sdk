@@ -81,9 +81,7 @@ namespace Microsoft.DotNet.MsiInstallerTests
             AddNuGetSource(@"c:\SdkTesting\WorkloadSets");
 
             VM.CreateRunCommand("dotnet", "workload", "update")
-                .Execute()
-                .Should()
-                .Pass();
+                .Execute().Should().Pass();
             
             var newRollback = GetRollback();
 
@@ -137,9 +135,16 @@ namespace Microsoft.DotNet.MsiInstallerTests
             GetWorkloadVersion().Should().Be(versionToInstall);
 
             //  Installing a workload shouldn't update workload version
-            InstallWorkload("aspire");
+            InstallWorkload("aspire", skipManifestUpdate: false);
 
             GetWorkloadVersion().Should().Be(versionToInstall);
+
+            VM.CreateRunCommand("dotnet", "workload", "update")
+                .Execute()
+                .Should()
+                .Pass();
+
+            GetWorkloadVersion().Should().Be("8.0.300-preview.0.24217.2");
         }
 
         [Fact]
@@ -155,8 +160,8 @@ namespace Microsoft.DotNet.MsiInstallerTests
                 .Execute()
                 .Should()
                 .Fail()
-                .And
-                .HaveStdErrContaining(unavailableWorkloadSetVersion);
+                .And.HaveStdErrContaining(unavailableWorkloadSetVersion)
+                .And.NotHaveStdOutContaining("Installation rollback failed");
 
             VM.CreateRunCommand("dotnet", "workload", "search")
                 .WithIsReadOnly(true)
@@ -166,7 +171,6 @@ namespace Microsoft.DotNet.MsiInstallerTests
 
             GetWorkloadVersion().Should().Be(workloadVersionBeforeUpdate);
         }
-
 
         [Fact]
         public void UpdateWorkloadSetWithoutAvailableManifests()
@@ -211,6 +215,48 @@ namespace Microsoft.DotNet.MsiInstallerTests
                 .Pass();
 
             GetWorkloadVersion().Should().Be(workloadVersionBeforeUpdate);
+        }
+
+        [Fact]
+        public void UpdateShouldNotPinWorkloadSet()
+        {
+            InstallSdk();
+            UpdateAndSwitchToWorkloadSetMode(out _, out _);
+
+            AddNuGetSource(@"c:\SdkTesting\WorkloadSets");
+
+            //  Rename latest workload set so it won't be installed
+            VM.CreateRunCommand("cmd", "/c", "ren", @$"c:\SdkTesting\WorkloadSets\Microsoft.NET.Workloads.8.0.300-preview.*.24217.2.nupkg", $"Microsoft.NET.Workloads.8.0.300-preview.*.24217.2.bak")
+                .Execute().Should().Pass();
+
+            VM.CreateRunCommand("dotnet", "workload", "update")
+                .Execute().Should().Pass();
+
+            GetWorkloadVersion().Should().Be("8.0.300-preview.0.24178.1");
+
+            //  Bring latest workload set version back, so installing workload should update to it
+            VM.CreateRunCommand("cmd", "/c", "ren", @$"c:\SdkTesting\WorkloadSets\Microsoft.NET.Workloads.8.0.300-preview.*.24217.2.bak", $"Microsoft.NET.Workloads.8.0.300-preview.*.24217.2.nupkg")
+                .Execute().Should().Pass();
+
+            InstallWorkload("aspire", skipManifestUpdate: false);
+
+            GetWorkloadVersion().Should().Be("8.0.300-preview.0.24217.2");
+        }
+
+        [Fact]
+        public void WorkloadSetInstallationRecordIsWrittenCorrectly()
+        {
+            //  Should the workload set version or the package version be used in the registry?
+            throw new NotImplementedException();
+        }
+
+        [Fact]
+        public void TurnOffWorkloadSetUpdateMode()
+        {
+            //  If you have a workload set installed and then turn off workload set update mode, what should happen?
+            //  - Update should update individual manifests
+            //  - Resolver should ignore workload sets that are installed
+            throw new NotImplementedException();
         }
 
         string GetUpdateMode()

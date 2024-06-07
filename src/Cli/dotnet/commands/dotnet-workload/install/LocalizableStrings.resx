@@ -329,7 +329,7 @@
     <value>Skip signature verification of workload packages and installers.</value>
   </data>
   <data name="CheckForUpdatedWorkloadManifests" xml:space="preserve">
-    <value>Checking for updated workload manifests.</value>
+    <value>Checking for updated workload version.</value>
   </data>
   <data name="InvalidVersionForWorkload" xml:space="preserve">
     <value>Error parsing version '{1}' for workload manifest ID '{0}'</value>
@@ -354,5 +354,8 @@
   </data>
   <data name="UpdatedWorkloadMode" xml:space="preserve">
     <value>Successfully updated workload install mode to use {0}.</value>
+  </data>
+  <data name="FailedToInstallWorkloadSet" xml:space="preserve">
+    <value>Failed to install workload set version {0}: {1}</value>
   </data>
 </root>

@@ -28,8 +28,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CheckForUpdatedWorkloadManifests">
-        <source>Checking for updated workload manifests.</source>
-        <target state="translated">Verifica della disponibilità di manifesti del carico di lavoro aggiornati.</target>
+        <source>Checking for updated workload version.</source>
+        <target state="needs-review-translation">Verifica della disponibilità di manifesti del carico di lavoro aggiornati.</target>
         <note />
       </trans-unit>
       <trans-unit id="DeletingWorkloadManifest">
@@ -80,6 +80,11 @@
       <trans-unit id="FailedToInstallWorkloadManifest">
         <source>Failed to install manifest {0} version {1}: {2}.</source>
         <target state="translated">Non è stato possibile installare il manifesto {0}, versione {1}: {2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FailedToInstallWorkloadSet">
+        <source>Failed to install workload set version {0}: {1}</source>
+        <target state="new">Failed to install workload set version {0}: {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="FromCacheOptionArgumentName">

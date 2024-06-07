@@ -124,10 +124,32 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
             _useManifestsFromInstallState = true;
             var availableWorkloadSets = GetAvailableWorkloadSets();
 
+            bool TryGetWorkloadSet(string workloadSetVersion, out WorkloadSet? workloadSet)
+            {
+                if (availableWorkloadSets.TryGetValue(workloadSetVersion, out workloadSet))
+                {
+                    return true;
+                }
+
+                //  Check to see if workload set is from a different feature band
+                WorkloadSet.WorkloadSetVersionToWorkloadSetPackageVersion(workloadSetVersion, out SdkFeatureBand workloadSetFeatureBand);
+                if (!workloadSetFeatureBand.Equals(_sdkVersionBand))
+                {
+                    var featureBandWorkloadSets = GetAvailableWorkloadSets(workloadSetFeatureBand);
+                    if (featureBandWorkloadSets.TryGetValue(workloadSetVersion, out workloadSet))
+                    {
+                        return true;
+                    }
+                }
+
+                workloadSet = null;
+                return false;
+            }
+
             if (_workloadSetVersionFromConstructor != null)
             {
                 _useManifestsFromInstallState = false;
-                if (!availableWorkloadSets.TryGetValue(_workloadSetVersionFromConstructor, out _workloadSet))
+                if (!TryGetWorkloadSet(_workloadSetVersionFromConstructor, out _workloadSet))
                 {
                     throw new FileNotFoundException(string.Format(Strings.WorkloadVersionNotFound, _workloadSetVersionFromConstructor));
                 }
@@ -139,7 +161,7 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
                 if (_globalJsonWorkloadSetVersion != null)
                 {
                     _useManifestsFromInstallState = false;
-                    if (!availableWorkloadSets.TryGetValue(_globalJsonWorkloadSetVersion, out _workloadSet))
+                    if (!TryGetWorkloadSet(_globalJsonWorkloadSetVersion, out _workloadSet))
                     {
                         _exceptionToThrow = new FileNotFoundException(string.Format(Strings.WorkloadVersionFromGlobalJsonNotFound, _globalJsonWorkloadSetVersion, _globalJsonPathFromConstructor));
                         return;
@@ -155,7 +177,7 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
                     var installState = InstallStateContents.FromPath(installStateFilePath);
                     if (!string.IsNullOrEmpty(installState.WorkloadVersion))
                     {
-                        if (!availableWorkloadSets.TryGetValue(installState.WorkloadVersion!, out _workloadSet))
+                        if (!TryGetWorkloadSet(installState.WorkloadVersion!, out _workloadSet))
                         {
                             throw new FileNotFoundException(string.Format(Strings.WorkloadVersionFromInstallStateNotFound, installState.WorkloadVersion, installStateFilePath));
                         }
@@ -446,43 +468,25 @@ namespace Microsoft.NET.Sdk.WorkloadManifestReader
         /// </summary>
         public Dictionary<string, WorkloadSet> GetAvailableWorkloadSets()
         {
+            return GetAvailableWorkloadSets(_sdkVersionBand);
+        }
+
+        public Dictionary<string, WorkloadSet> GetAvailableWorkloadSets(SdkFeatureBand workloadSetFeatureBand)
+        {
+            //  How to deal with cross-band workload sets?
             Dictionary<string, WorkloadSet> availableWorkloadSets = new Dictionary<string, WorkloadSet>();
 
             foreach (var manifestRoot in _manifestRoots.Reverse())
             {
-                //  Workload sets must match the SDK feature band, we don't support any fallback to a previous band
-                var workloadSetsRoot = Path.Combine(manifestRoot, _sdkVersionBand.ToString(), WorkloadSetsFolderName);
+                //  We don't automatically fall back to a previous band
+                var workloadSetsRoot = Path.Combine(manifestRoot, workloadSetFeatureBand.ToString(), WorkloadSetsFolderName);
                 if (Directory.Exists(workloadSetsRoot))
                 {
                     foreach (var workloadSetDirectory in Directory.GetDirectories(workloadSetsRoot))
                     {
-                        WorkloadSet? workloadSet = null;
-                        foreach (var jsonFile in Directory.GetFiles(workloadSetDirectory, "*.workloadset.json"))
-                        {
-                            var newWorkloadSet = WorkloadSet.FromJson(File.ReadAllText(jsonFile), _sdkVersionBand);
-                            if (workloadSet == null)
-                            {
-                                workloadSet = newWorkloadSet;
-                            }
-                            else
-                            {
-                                //  If there are multiple workloadset.json files, merge them
-                                foreach (var kvp in newWorkloadSet.ManifestVersions)
-                                {
-                                    workloadSet.ManifestVersions.Add(kvp.Key, kvp.Value);
-                                }
-                            }
-                        }
-                        if (workloadSet != null)
-                        {
-                            if (File.Exists(Path.Combine(workloadSetDirectory, "baseline.workloadset.json")))
-                            {
-                                workloadSet.IsBaselineWorkloadSet = true;
-                            }
-
-                            workloadSet.Version = Path.GetFileName(workloadSetDirectory);
-                            availableWorkloadSets[workloadSet.Version] = workloadSet;
-                        }
+                        var workloadSetVersion = Path.GetFileName(workloadSetDirectory);
+                        var workloadSet = WorkloadSet.FromWorkloadSetFolder(workloadSetDirectory, workloadSetVersion, workloadSetFeatureBand);
+                        availableWorkloadSets[workloadSet.Version!] = workloadSet;
                     }
                 }
             }
